@@ -1,0 +1,6 @@
+echo "Compiling Sokoban Game!"
+cd build && ./premake5 gmake2
+cd ..
+echo "Current Directory"
+pwd
+make

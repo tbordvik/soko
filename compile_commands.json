@@ -1,0 +1,28 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-DDEBUG",
+      "-DPLATFORM_DESKTOP",
+      "-DGRAPHICS_API_OPENGL_33",
+      "-D_GLFW_X11",
+      "-D_GNU_SOURCE",
+      "-I../../src",
+      "-I../../include",
+      "-I../external/raylib-master/src",
+      "-I../external/raylib-master/src/external",
+      "-I../external/raylib-master/src/external/glfw/include",
+      "-m64",
+      "-Wshadow",
+      "-g",
+      "-std=c17",
+      "-c",
+      "-o",
+      "obj/x64/Debug/sokoban/main.o",
+      "../../src/main.c"
+    ],
+    "directory": "/home/tor/gamedev/sokoban/build/build_files",
+    "file": "/home/tor/gamedev/sokoban/src/main.c",
+    "output": "/home/tor/gamedev/sokoban/build/build_files/obj/x64/Debug/sokoban/main.o"
+  }
+]
