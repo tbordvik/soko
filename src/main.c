@@ -47,11 +47,9 @@ Tile level[GRID_HEIGHT][GRID_WIDTH] = {
     {{WALL_BOTTOM | WALL_LEFT, EMPTY}, {WALL_BOTTOM, EMPTY}, {WALL_BOTTOM, EMPTY}, {WALL_BOTTOM, EMPTY}, {WALL_BOTTOM, EMPTY}, {WALL_BOTTOM, EMPTY}, {WALL_BOTTOM, EMPTY}, {WALL_BOTTOM | WALL_RIGHT, EMPTY}}
 };
 
-// Set player starting position
-Player player = {2, 1}; // Starting at (2, 1)
+Player player = {2, 1};
 bool gameWon = false;
 
-// Function to check if the game is won
 bool isGameWon() {
     int targets = 0;
     int boxesOnTargets = 0;
@@ -68,27 +66,19 @@ bool isGameWon() {
     return targets > 0 && targets == boxesOnTargets;
 }
 
-void restartLevel() {
-    Tile _level[GRID_HEIGHT][GRID_WIDTH] = {
-        {{WALL_TOP | WALL_LEFT, EMPTY}, {WALL_TOP, EMPTY}, {WALL_TOP, EMPTY}, {WALL_TOP, EMPTY}, {WALL_TOP, EMPTY}, {WALL_TOP, EMPTY}, {WALL_TOP, EMPTY}, {WALL_TOP | WALL_RIGHT, EMPTY}},
-        {{WALL_LEFT, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, BOX}, {0, EMPTY}, {0, EMPTY}, {WALL_RIGHT, EMPTY}},
-        {{WALL_LEFT, EMPTY}, {0, EMPTY}, {0, EMPTY}, {WALL_BOTTOM, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {WALL_RIGHT, EMPTY}},
-        {{WALL_LEFT, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, TARGET}, {WALL_RIGHT, EMPTY}},
-        {{WALL_LEFT, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {WALL_RIGHT, EMPTY}},
-        {{WALL_LEFT, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {WALL_RIGHT, EMPTY}},
-        {{WALL_LEFT, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {0, EMPTY}, {WALL_RIGHT, EMPTY}},
-        {{WALL_BOTTOM | WALL_LEFT, EMPTY}, {WALL_BOTTOM, EMPTY}, {WALL_BOTTOM, EMPTY}, {WALL_BOTTOM, EMPTY}, {WALL_BOTTOM, EMPTY}, {WALL_BOTTOM, EMPTY}, {WALL_BOTTOM, EMPTY}, {WALL_BOTTOM | WALL_RIGHT, EMPTY}}
-    };
-    memcpy(level, _level, sizeof(_level));
+void restartLevel(void* currentLevel) {
+    memcpy(currentLevel, level, sizeof(level));
     player.x = 2;
     player.y = 1;
     moves = 0;
 }
 
 int main() {
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sokoban Game - Fixed Box Push");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sokoban Game");
     SetTargetFPS(60);
 
+    Tile currentLevel[GRID_HEIGHT][GRID_WIDTH];
+    restartLevel(&currentLevel);
     while (!WindowShouldClose()) {
         if (!gameWon) {
             // Input handling
@@ -190,11 +180,11 @@ int main() {
         DrawRectangle(player.x * TILE_SIZE, player.y * TILE_SIZE + HEADER_HEIGHT, TILE_SIZE, TILE_SIZE, BLUE);
 
         if (gameWon) {
-            DrawText("You Win!", SCREEN_WIDTH / 2 - MeasureText("You Win!", 30) / 2, 40, 30, YELLOW); // Adjusted position and size
+            DrawText("You Win!", SCREEN_WIDTH / 2 - MeasureText("You Win!", 30) / 2, 40, 30, YELLOW);
         }
 
         if(IsKeyPressed(KEY_R)) {
-            restartLevel();
+            restartLevel(&currentLevel);
             gameWon = false;
         }
         EndDrawing();

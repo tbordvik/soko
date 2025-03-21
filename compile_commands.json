@@ -18,11 +18,11 @@
       "-std=c17",
       "-c",
       "-o",
-      "obj/x64/Debug/sokoban/main.o",
+      "obj/x64/Debug/soko/main.o",
       "../../src/main.c"
     ],
-    "directory": "/home/tor/gamedev/sokoban/build/build_files",
-    "file": "/home/tor/gamedev/sokoban/src/main.c",
-    "output": "/home/tor/gamedev/sokoban/build/build_files/obj/x64/Debug/sokoban/main.o"
+    "directory": "/home/tor/gamedev/soko/build/build_files",
+    "file": "/home/tor/gamedev/soko/src/main.c",
+    "output": "/home/tor/gamedev/soko/build/build_files/obj/x64/Debug/soko/main.o"
   }
 ]
