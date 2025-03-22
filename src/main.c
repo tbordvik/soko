@@ -25,30 +25,11 @@ typedef struct {
     int x;
     int y;
 } Player;
-
-int moves = 0;
-bool editor_mode = false;
-int active_tile_selector = 0;
-
 // Bit masks for square content
 #define WALL        0b10000
 #define BOX         0b01000
 #define TARGET      0b00100
 #define START       0b00010
-/*#define WALL  0b0100*/
-/*#define WALL 0b0010*/
-/*#define WALL   0b0001// Simple level (0 = empty, 1 = wall, 2 = player start, 3 = box, 4 = target)*/
-/**/
-/*Tile level[GRID_HEIGHT][GRID_WIDTH] = {*/
-/*    {0, 0, 0, 0, 0, 0, 0, 0},*/
-/*    {0, 0, 0, 0, BOX, 0, 0, 0},*/
-/*    {0, 0, WALL, WALL, 0, 0, 0, 0},*/
-/*    {0, 0, 0, 0, 0, 0, TARGET, 0},*/
-/*    {0, 0, 0, 0, 0, 0, 0, 0},*/
-/*    {0, 0, 0, 0, 0, 0, 0, 0},*/
-/*    {0, 0, 0, 0, 0, 0, 0, 0},*/
-/*    {0, 0, 0, 0, 0, 0, 0, 0}*/
-/*};*/
 
 Tile level[GRID_WIDTH][GRID_HEIGHT] = {0};
 Tile currentLevel[GRID_WIDTH][GRID_HEIGHT] = {0};
@@ -56,6 +37,10 @@ Tile currentLevel[GRID_WIDTH][GRID_HEIGHT] = {0};
 Player player;
 bool gameWon = false;
 int level_num = 0;
+int moves = 0;
+bool editor_mode = false;
+int active_tile_selector = 0;
+
 
 bool isGameWon() {
     int targets = 0;
@@ -247,7 +232,8 @@ int main() {
                     /*DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, RED);*/
                 }
                 if (!(currentLevel[x][y].content & (BOX | TARGET | WALL))) {
-                    DrawRectangleLines(tileX, tileY, TILE_SIZE, TILE_SIZE, DARKGRAY);
+                    /*DrawRectangleLines(tileX, tileY, TILE_SIZE, TILE_SIZE, DARKGRAY);*/
+
                 }
             }
         }
