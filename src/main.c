@@ -30,9 +30,8 @@ typedef struct {
 #define BOX         0b01000
 #define TARGET      0b00100
 #define START       0b00010
-
 Tile level[GRID_WIDTH][GRID_HEIGHT] = {0};
-Tile currentLevel[GRID_WIDTH][GRID_HEIGHT] = {0};
+Tile current_level[GRID_WIDTH][GRID_HEIGHT] = {0};
 
 Player player;
 bool gameWon = false;
@@ -47,9 +46,9 @@ bool isGameWon() {
     int boxesOnTargets = 0;
     for (int x = 0; x < GRID_HEIGHT; x++) {
         for (int y = 0; y < GRID_WIDTH; y++) {
-            if (currentLevel[x][y].content & TARGET) {
+            if (current_level[x][y].content & TARGET) {
                 targets++;
-                if (currentLevel[x][y].content & BOX) {
+                if (current_level[x][y].content & BOX) {
                     boxesOnTargets++;
                 }
             }
@@ -61,7 +60,7 @@ bool isGameWon() {
 Player startPos() {
     for(int x=0; x<GRID_WIDTH; x++) {
         for(int y=0; y<GRID_HEIGHT; y++) {
-            if(currentLevel[x][y].content & START) {
+            if(current_level[x][y].content & START) {
                 Player p = { x, y };
                 return p;
             }
@@ -78,7 +77,7 @@ void loadLevel() {
     if(!FileExists(filename)) {
         for(int x=0; x<GRID_WIDTH; x++) {
             for(int y=0; y<GRID_HEIGHT; y++) {
-                currentLevel[x][y].content = 0;
+                current_level[x][y].content = 0;
             }
         }
         return;
@@ -96,7 +95,7 @@ void loadLevel() {
 
             /*sprintf(debug_str, "[%d][%d] - %d", x, y, level_bytes[x][y]);*/
             /*TraceLog(LOG_WARNING, debug_str);*/
-            currentLevel[x][y].content = level_bytes[x][y];
+            current_level[x][y].content = level_bytes[x][y];
         }
     }
     player = startPos();
@@ -107,7 +106,7 @@ void saveLevel() {
     unsigned char bytes_to_save[GRID_WIDTH][GRID_HEIGHT];
     for(int x=0; x<GRID_WIDTH; x++) {
         for(int y=0; y<GRID_HEIGHT; y++) {
-            bytes_to_save[x][y] = currentLevel[x][y].content;
+            bytes_to_save[x][y] = current_level[x][y].content;
         }
     }
     char filename[32];
@@ -131,13 +130,13 @@ int main() {
     char debug_string[128];
     for(int x=0; x<GRID_WIDTH; x++) {
         for(int y=0; y<GRID_HEIGHT; y++) {
-            sprintf(debug_string, "[%d][%d]: %d\n", x, y, (int) currentLevel[x][y].content); 
+            sprintf(debug_string, "[%d][%d]: %d\n", x, y, (int) current_level[x][y].content); 
             /*TraceLog(LOG_WARNING, debug_string);*/
         }
     }
 
     // restartLevel();
-    // restartLevel(&currentLevel);
+    // restartLevel(&current_level);
     while (!WindowShouldClose()) {
         // Game Logic
         if (!gameWon && !editor_mode) {
@@ -156,27 +155,27 @@ int main() {
                 if (newX >= 0 && newX < GRID_WIDTH && newY >= 0 && newY < GRID_HEIGHT) {
                     // Check walls blocking movement
                     bool canMove = true;
-                    if (dx == 1 && currentLevel[newX][newY].content & WALL) canMove = false;
-                    if (dx == -1 && currentLevel[newX][newY].content & WALL) canMove = false;
-                    if (dy == 1 && currentLevel[newX][newY].content & WALL) canMove = false;
-                    if (dy == -1 && currentLevel[newX][newY].content & WALL) canMove = false;
+                    if (dx == 1 && current_level[newX][newY].content & WALL) canMove = false;
+                    if (dx == -1 && current_level[newX][newY].content & WALL) canMove = false;
+                    if (dy == 1 && current_level[newX][newY].content & WALL) canMove = false;
+                    if (dy == -1 && current_level[newX][newY].content & WALL) canMove = false;
 
                     if (canMove) {
                         // Check for box pushing
-                        if (currentLevel[newX][newY].content & BOX) {
+                        if (current_level[newX][newY].content & BOX) {
                             int boxNewX = newX + dx;
                             int boxNewY = newY + dy;
                             if (boxNewX >= 0 && boxNewX < GRID_WIDTH && boxNewY >= 0 && boxNewY < GRID_HEIGHT) {
                                 bool canPush = true;
-                                if (dx == 1 && currentLevel[boxNewX][boxNewY].content & WALL) canPush = false;
-                                if (dx == -1 && currentLevel[boxNewX][boxNewY].content & WALL) canPush = false;
-                                if (dy == 1 && currentLevel[boxNewX][boxNewY].content & WALL) canPush = false;
-                                if (dy == -1 && currentLevel[boxNewX][boxNewY].content & WALL) canPush = false;
+                                if (dx == 1 && current_level[boxNewX][boxNewY].content & WALL) canPush = false;
+                                if (dx == -1 && current_level[boxNewX][boxNewY].content & WALL) canPush = false;
+                                if (dy == 1 && current_level[boxNewX][boxNewY].content & WALL) canPush = false;
+                                if (dy == -1 && current_level[boxNewX][boxNewY].content & WALL) canPush = false;
 
                                 // Allow pushing onto EMPTY or TARGET, but not another BOX
-                                if (canPush && !(currentLevel[boxNewX][boxNewY].content & BOX)) {
-                                    currentLevel[boxNewX][boxNewY].content |= BOX; // Add BOX to new position
-                                    currentLevel[newX][newY].content &= ~BOX;      // Remove BOX from old position
+                                if (canPush && !(current_level[boxNewX][boxNewY].content & BOX)) {
+                                    current_level[boxNewX][boxNewY].content |= BOX; // Add BOX to new position
+                                    current_level[newX][newY].content &= ~BOX;      // Remove BOX from old position
                                     player.x = newX;
                                     player.y = newY;
                                     moves = moves + 1;
@@ -187,7 +186,7 @@ int main() {
                                     }
                                 }
                             }
-                        } else if (!(currentLevel[newX][newY].content & BOX)) { // Player can move to EMPTY or TARGET
+                        } else if (!(current_level[newX][newY].content & BOX)) { // Player can move to EMPTY or TARGET
                             player.x = newX;
                             player.y = newY;
                             moves = moves + 1;
@@ -219,19 +218,19 @@ int main() {
                 int tileY = y * TILE_SIZE + HEADER_HEIGHT;
 
                 // Draw tile contents
-                if (currentLevel[x][y].content & TARGET) {
+                if (current_level[x][y].content & TARGET) {
                     DrawTextureRec(target, tile_src, (Vector2){tileX, tileY}, WHITE);
                     /*DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, GREEN);*/
                 }
-                if (currentLevel[x][y].content & BOX) {
+                if (current_level[x][y].content & BOX) {
                     DrawTextureRec(box, tile_src, (Vector2){tileX, tileY}, WHITE);
                     /*DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, BROWN);*/
                 }
-                if(currentLevel[x][y].content & WALL) {
+                if(current_level[x][y].content & WALL) {
                     DrawTextureRec(wall, tile_src, (Vector2){tileX, tileY}, WHITE);
                     /*DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, RED);*/
                 }
-                if (!(currentLevel[x][y].content & (BOX | TARGET | WALL))) {
+                if (!(current_level[x][y].content & (BOX | TARGET | WALL))) {
                     /*DrawRectangleLines(tileX, tileY, TILE_SIZE, TILE_SIZE, DARKGRAY);*/
 
                 }
@@ -266,13 +265,13 @@ int main() {
                     if(selected_tile & START) {
                         for(int x=0; x<GRID_WIDTH; x++) {
                             for(int y=0; y<GRID_HEIGHT; y++) {
-                                currentLevel[x][y].content &= ~START;
+                                current_level[x][y].content &= ~START;
                             }
                         }
                         player.x = gridX;
                         player.y = gridY;
                     }
-                    currentLevel[gridX][gridY].content = selected_tile;
+                    current_level[gridX][gridY].content = selected_tile;
                 }
            }
         }
