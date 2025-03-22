@@ -40,6 +40,9 @@ int moves = 0;
 bool editor_mode = false;
 int active_tile_selector = 0;
 
+bool spinner_edit_mode = false;
+int spinner_val = 0;
+
 
 bool isGameWon() {
     int targets = 0;
@@ -246,12 +249,18 @@ int main() {
             selected_tile = (char) (1 << active_tile_selector);
             Rectangle save_button_rect = {SCREEN_WIDTH - BUTTON_WIDTH, SCREEN_HEIGHT - EDITOR_HEIGHT, BUTTON_WIDTH, EDITOR_HEIGHT};
             GuiButton(save_button_rect, "Save");
-            GuiButton( (Rectangle){SCREEN_WIDTH - BUTTON_WIDTH*2, SCREEN_HEIGHT - EDITOR_HEIGHT, BUTTON_WIDTH, EDITOR_HEIGHT}, "New");
+            if(GuiSpinner((Rectangle){(SCREEN_WIDTH - 100) / 2.0f, SCREEN_HEIGHT - EDITOR_HEIGHT, 100, EDITOR_HEIGHT}, "Level", &spinner_val, 0, 10, spinner_edit_mode)) spinner_edit_mode = !spinner_edit_mode;
+            GuiButton((Rectangle) { SCREEN_WIDTH / 2.0f + 50.0f, SCREEN_HEIGHT - EDITOR_HEIGHT, BUTTON_WIDTH, EDITOR_HEIGHT}, "Load");
             if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                 Vector2 cursor = GetMousePosition();
                 bool save_button_is_clicked = cursor.x > SCREEN_WIDTH - BUTTON_WIDTH && cursor.y > SCREEN_HEIGHT - EDITOR_HEIGHT;
+                bool load_button_is_clicked = (cursor.x > SCREEN_WIDTH / 2.0f + 50.0f) && (cursor.x < SCREEN_WIDTH / 2.0f + 50.0f + (float) BUTTON_WIDTH) && cursor.y > SCREEN_HEIGHT - EDITOR_HEIGHT;
                 if(save_button_is_clicked) {
                     saveLevel();
+                }
+                if(load_button_is_clicked) {
+                    level_num = spinner_val;
+                    loadLevel();
                 }
             }
             if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
@@ -296,6 +305,10 @@ int main() {
             /*puts(debug_string);*/
         }
     }
+    UnloadTexture(box);
+    UnloadTexture(player_texture);
+    UnloadTexture(target);
+    UnloadTexture(wall);
     CloseWindow();
     return 0;
 }
