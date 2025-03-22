@@ -137,6 +137,11 @@ int main() {
     SetTargetFPS(60);
     loadLevel();
 
+    Texture2D wall = LoadTexture("resources/wall.png");
+    Texture2D target = LoadTexture("resources/target.png");
+    Texture2D box = LoadTexture("resources/box.png");
+    Texture2D player_texture = LoadTexture("resources/player.png");
+    Rectangle tile_src = {0, 0, TILE_SIZE, TILE_SIZE};
     TraceLog(LOG_WARNING, "asdf");
     char debug_string[128];
     for(int x=0; x<GRID_WIDTH; x++) {
@@ -230,13 +235,16 @@ int main() {
 
                 // Draw tile contents
                 if (currentLevel[x][y].content & TARGET) {
-                    DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, GREEN);
+                    DrawTextureRec(target, tile_src, (Vector2){tileX, tileY}, WHITE);
+                    /*DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, GREEN);*/
                 }
                 if (currentLevel[x][y].content & BOX) {
-                    DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, BROWN);
+                    DrawTextureRec(box, tile_src, (Vector2){tileX, tileY}, WHITE);
+                    /*DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, BROWN);*/
                 }
                 if(currentLevel[x][y].content & WALL) {
-                    DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, RED);
+                    DrawTextureRec(wall, tile_src, (Vector2){tileX, tileY}, WHITE);
+                    /*DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, RED);*/
                 }
                 if (!(currentLevel[x][y].content & (BOX | TARGET | WALL))) {
                     DrawRectangleLines(tileX, tileY, TILE_SIZE, TILE_SIZE, DARKGRAY);
@@ -244,7 +252,7 @@ int main() {
             }
         }
         // Draw player with proper offset
-        DrawRectangle(player.x * TILE_SIZE, player.y * TILE_SIZE + HEADER_HEIGHT, TILE_SIZE, TILE_SIZE, BLUE);
+        DrawTextureRec(player_texture, tile_src, (Vector2){player.x * TILE_SIZE, player.y * TILE_SIZE + HEADER_HEIGHT}, PINK);
 
         unsigned char selected_tile;
         if(editor_mode) {
