@@ -30,11 +30,13 @@ int moves = 0;
 bool editor_mode = false;
 int active_tile_selector = 0;
 
+
 // Bit masks for square content
 #define WALL        0b10000
 #define BOX         0b01000
 #define TARGET      0b00100
 #define START       0b00010
+#define EMPTY       0b00001 // We don't really need this?
 /*#define WALL  0b0100*/
 /*#define WALL 0b0010*/
 /*#define WALL   0b0001// Simple level (0 = empty, 1 = wall, 2 = player start, 3 = box, 4 = target)*/
@@ -88,64 +90,33 @@ Player startPos() {
 }
 
 void loadLevel() {
-    char filename[32];
+    char * filename;
     sprintf(filename, "level%d", level_num); 
-    if(!FileExists(filename)) {
-        for(int x=0; x<GRID_WIDTH; x++) {
-            for(int y=0; y<GRID_HEIGHT; y++) {
-                currentLevel[x][y].content = 0;
-            }
-        }
-        return;
-    }
-    FILE *fp = fopen(filename, "r");
+    /*FILE *fp = fopen(filename, "r");*/
     /*assert(fp != 0);*/
-    unsigned char level_bytes[GRID_WIDTH][GRID_HEIGHT];
-    fread(level_bytes, sizeof(level_bytes), 1, fp);
+    unsigned char *level_bytes = (unsigned char*) malloc(GRID_WIDTH*GRID_HEIGHT + 100);
+    /*fread(level_bytes, 1, 1, fp);*/
     fclose(fp);
 
-    printf("Size: %zu", sizeof(level_bytes));
-    char debug_str[128];
-    for(int x = 0; x<GRID_WIDTH; x++) {
-        for(int y = 0; y<GRID_HEIGHT; y++) {
-
-            /*sprintf(debug_str, "[%d][%d] - %d", x, y, level_bytes[x][y]);*/
-            /*TraceLog(LOG_WARNING, debug_str);*/
-            currentLevel[x][y].content = level_bytes[x][y];
-        }
-    }
+    /*printf("Size: %zu", sizeof(level_bytes));*/
+    /*for(int x; x<GRID_WIDTH; x++) {*/
+    /*    for(int y; y<GRID_HEIGHT; y++) {*/
+    /*        currentLevel[x][y].content = level_bytes[x*y + y];*/
+    /*    }*/
+    /*}*/
     player = startPos();
     moves = 0;
 }
 
-void saveLevel() {
-    unsigned char bytes_to_save[GRID_WIDTH][GRID_HEIGHT];
-    for(int x=0; x<GRID_WIDTH; x++) {
-        for(int y=0; y<GRID_HEIGHT; y++) {
-            bytes_to_save[x][y] = currentLevel[x][y].content;
-        }
-    }
-    char filename[32];
-    sprintf(filename, "level%d", level_num);
-    FILE *fp = fopen(filename, "w");
-    fwrite(bytes_to_save, sizeof(bytes_to_save), 1, fp);
-    fclose(fp);
+bool saveLevel() {
+    return false;
 }
 
 int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sokoban Game");
     SetTargetFPS(60);
+
     loadLevel();
-
-    TraceLog(LOG_WARNING, "asdf");
-    char debug_string[128];
-    for(int x=0; x<GRID_WIDTH; x++) {
-        for(int y=0; y<GRID_HEIGHT; y++) {
-            sprintf(debug_string, "[%d][%d]: %d\n", x, y, (int) currentLevel[x][y].content); 
-            /*TraceLog(LOG_WARNING, debug_string);*/
-        }
-    }
-
     // restartLevel();
     // restartLevel(&currentLevel);
     while (!WindowShouldClose()) {
@@ -247,6 +218,7 @@ int main() {
         DrawRectangle(player.x * TILE_SIZE, player.y * TILE_SIZE + HEADER_HEIGHT, TILE_SIZE, TILE_SIZE, BLUE);
 
         unsigned char selected_tile;
+        char debug_string[128];
         if(editor_mode) {
             Rectangle tile_select = {0, SCREEN_HEIGHT - EDITOR_HEIGHT, BUTTON_WIDTH, EDITOR_HEIGHT};
             int wtf = GuiToggleGroup(tile_select, "EMPTY;START;TARGET;BOX;WALL", &active_tile_selector);
@@ -258,7 +230,15 @@ int main() {
                 Vector2 cursor = GetMousePosition();
                 bool save_button_is_clicked = cursor.x > SCREEN_WIDTH - BUTTON_WIDTH && cursor.y > SCREEN_HEIGHT - EDITOR_HEIGHT;
                 if(save_button_is_clicked) {
-                    saveLevel();
+                    unsigned char bytes_to_save[GRID_WIDTH][GRID_HEIGHT];
+                    for(int x=0; x<GRID_WIDTH; x++) {
+                        for(int y=0; y<GRID_HEIGHT; y++) {
+                            bytes_to_save[x][y] = currentLevel[x][y].content;
+                        }
+                    }
+                    FILE *fp = fopen("level0", "w");
+                    fwrite(bytes_to_save, sizeof(currentLevel), 1, fp);
+                    fclose(fp);
                 }
             }
             if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
@@ -283,12 +263,7 @@ int main() {
            }
         }
         if (gameWon) {
-            DrawText("You Win! Press Space for next level!", SCREEN_WIDTH / 2 - MeasureText("You Win!", 30) / 2, 40, 30, YELLOW);
-            if(IsKeyPressed(KEY_SPACE)) {
-                level_num++;
-                gameWon = false;
-                loadLevel();
-            }
+            DrawText("You Win!", SCREEN_WIDTH / 2 - MeasureText("You Win!", 30) / 2, 40, 30, YELLOW);
         }
 
         if(IsKeyPressed(KEY_R)) {
