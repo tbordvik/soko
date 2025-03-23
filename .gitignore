@@ -401,5 +401,5 @@ raylib-master
 Makefile
 /*.sln
 
-compiler_commands.json
+compile_commands.json
 
