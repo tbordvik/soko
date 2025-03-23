@@ -129,6 +129,7 @@ int main() {
     Texture2D target = LoadTexture("resources/target32.png");
     Texture2D box = LoadTexture("resources/box32.png");
     Texture2D player_texture = LoadTexture("resources/player32.png");
+    Texture2D bomb = LoadTexture("resources/tnt32.png");
     Rectangle tile_src = {0, 0, TILE_SIZE, TILE_SIZE};
 
     loadLevel();
@@ -249,8 +250,8 @@ int main() {
                 }
  
                 if(current_level[x][y].content & BOMB) {
-                    /*DrawTextureRec(wall, tile_src, (Vector2){tileX, tileY}, WHITE);*/
-                    DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, RED);
+                    DrawTextureRec(bomb, tile_src, (Vector2){tileX, tileY}, WHITE);
+                    /*DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, RED);*/
                 }
                 if (!(current_level[x][y].content & (BOX | TARGET | WALL | BOMB ))) {
                     // Draw grid lines
