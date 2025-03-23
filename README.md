@@ -1,3 +1,23 @@
+# Sokoban game
+
+A clone of the "famous" Sokoban game.
+
+Arrows to move.
+R to restart.
+E to toggle editor mode.
+
+Using [Raylib](https://www.raylib.com/), the #2 open source game engine :)
+
+Install dependencies:
+- [Linux](https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux)
+- [Windows](https://github.com/raysan5/raylib/wiki/Working-on-Windows)
+- [macOS](https://github.com/raysan5/raylib/wiki/Working-on-macOS)
+
+This is only tested on linux. Sorry windows/mac people.
+Compile with `./compile` or to compile and run `./compile_and_run`
+
+Based on the [Raylib-Quickstart](https://github.com/raylib-extras/raylib-quickstart) template - the readme from it follows.
+
 # Raylib-Quickstart
 A simple cross platform template for setting up a project with the bleeding edge raylib code.
 Works with C or C++.
