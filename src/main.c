@@ -15,16 +15,16 @@
 #define SCREEN_WIDTH (TILE_SIZE * GRID_WIDTH)
 #define SCREEN_HEIGHT (TILE_SIZE * GRID_HEIGHT + HEADER_HEIGHT)
 
-// Tile structure with walls and content
+
 typedef struct {
     unsigned char content;
 } Tile;
 
-// Player position
 typedef struct {
     int x;
     int y;
 } Player;
+
 // Bit masks for square content
 #define WALL        0b10000
 #define BOX         0b01000
@@ -34,16 +34,18 @@ typedef struct {
 
 Tile current_level[GRID_WIDTH][GRID_HEIGHT] = {0};
 
+// Game
 Player player;
 bool gameWon = false;
 unsigned int level_num = 0;
 int moves = 0;
+
+// Editor
 bool editor_mode = false;
 int active_tile_selector = 0;
 int content_length = 5;
-
 bool spinner_edit_mode = false;
-int spinner_val = 0;
+int spinner_val = 0; // level number
 
 
 bool isGameWon() {
@@ -78,7 +80,8 @@ Player startPos() {
 
 void loadLevel() {
     char filename[32];
-    sprintf(filename, "level%d", level_num); 
+    // Not sure if this will work on windows
+    sprintf(filename, "resources/levels/level%d", level_num); 
     if(!FileExists(filename)) {
         for(int x=0; x<GRID_WIDTH; x++) {
             for(int y=0; y<GRID_HEIGHT; y++) {
@@ -88,16 +91,13 @@ void loadLevel() {
         return;
     }
     FILE *fp = fopen(filename, "r");
-    /*assert(fp != 0);*/
     unsigned char level_bytes[GRID_WIDTH][GRID_HEIGHT];
     fread(level_bytes, sizeof(level_bytes), 1, fp);
     fclose(fp);
 
-    printf("Size: %zu", sizeof(level_bytes));
     char debug_str[128];
     for(int x = 0; x<GRID_WIDTH; x++) {
         for(int y = 0; y<GRID_HEIGHT; y++) {
-
             /*sprintf(debug_str, "[%d][%d] - %d", x, y, level_bytes[x][y]);*/
             /*TraceLog(LOG_WARNING, debug_str);*/
             current_level[x][y].content = level_bytes[x][y];
@@ -115,7 +115,7 @@ void saveLevel() {
         }
     }
     char filename[32];
-    sprintf(filename, "level%d", level_num);
+    sprintf(filename, "resources/levels/level%d", level_num);
     FILE *fp = fopen(filename, "w");
     fwrite(bytes_to_save, sizeof(bytes_to_save), 1, fp);
     fclose(fp);
@@ -124,21 +124,22 @@ void saveLevel() {
 int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sokoban Game");
     SetTargetFPS(60);
-    loadLevel();
 
     Texture2D wall = LoadTexture("resources/wall32.png");
     Texture2D target = LoadTexture("resources/target32.png");
     Texture2D box = LoadTexture("resources/box32.png");
     Texture2D player_texture = LoadTexture("resources/player32.png");
     Rectangle tile_src = {0, 0, TILE_SIZE, TILE_SIZE};
-    TraceLog(LOG_WARNING, "asdf");
+
+    loadLevel();
+
     char debug_string[128];
-    for(int x=0; x<GRID_WIDTH; x++) {
-        for(int y=0; y<GRID_HEIGHT; y++) {
-            sprintf(debug_string, "[%d][%d]: %d\n", x, y, (int) current_level[x][y].content); 
-            /*TraceLog(LOG_WARNING, debug_string);*/
-        }
-    }
+    /*for(int x=0; x<GRID_WIDTH; x++) {*/
+    /*    for(int y=0; y<GRID_HEIGHT; y++) {*/
+    /*        sprintf(debug_string, "[%d][%d]: %d\n", x, y, (int) current_level[x][y].content); */
+    /*        TraceLog(LOG_WARNING, debug_string);*/
+    /*    }*/
+    /*}*/
 
     while (!WindowShouldClose()) {
         // Game Logic
@@ -151,32 +152,29 @@ int main() {
             if (IsKeyPressed(KEY_DOWN)) dy = 1;
 
             // Move player
-            int newX = player.x + dx;
-            int newY = player.y + dy;
+            int new_x = player.x + dx;
+            int new_y = player.y + dy;
             if(dx != 0 || dy != 0) {
 
-                if (newX >= 0 && newX < GRID_WIDTH && newY >= 0 && newY < GRID_HEIGHT) {
+                if (new_x >= 0 && new_y < GRID_WIDTH && new_y >= 0 && new_y < GRID_HEIGHT) {
+                    unsigned char pushed_content = current_level[new_x][new_y].content;
                     // Check walls blocking movement
-                    bool canMove = true;
-                    if (dx == 1 && current_level[newX][newY].content & WALL) canMove = false;
-                    if (dx == -1 && current_level[newX][newY].content & WALL) canMove = false;
-                    if (dy == 1 && current_level[newX][newY].content & WALL) canMove = false;
-                    if (dy == -1 && current_level[newX][newY].content & WALL) canMove = false;
+                    if (!(pushed_content & WALL)) {
 
-                    if (canMove) {
-
-                        // The pushed item's (possible) new pos
-                        int item_new_x = newX + dx;
-                        int item_new_y = newY + dy;
+                        // The pushed item's new pos (maybe)
+                        int item_new_x = new_x + dx;
+                        int item_new_y = new_y + dy;
+                        unsigned char pushed_to_content = current_level[item_new_x][item_new_y].content;
 
                         if (item_new_x >= 0 && item_new_x < GRID_WIDTH && item_new_y >= 0 && item_new_y < GRID_HEIGHT) {
-                            // Check for box pushing
-                            if (current_level[newX][newY].content & BOX) {
-                                if (!(current_level[item_new_x][item_new_y].content & WALL || current_level[item_new_x][item_new_y].content & BOX)) {
-                                    current_level[item_new_x][item_new_y].content |= BOX; // Add BOX to new position
-                                    current_level[newX][newY].content &= ~BOX;      // Remove BOX from old position
-                                    player.x = newX;
-                                    player.y = newY;
+                            // Box pushing
+                            if (pushed_content & BOX) {
+                                bool can_push_box = !(pushed_to_content & WALL || pushed_to_content & BOX || pushed_to_content & BOMB); 
+                                if (can_push_box) {
+                                    current_level[item_new_x][item_new_y].content |= BOX;
+                                    current_level[new_x][new_y].content &= ~BOX; 
+                                    player.x = new_x;
+                                    player.y = new_y;
                                     moves = moves + 1;
 
                                     // Check win condition after pushing a box
@@ -185,25 +183,26 @@ int main() {
                                     }
                                 }
                             }
-                            // Check for bomb pushing
-                            else if (current_level[newX][newY].content & BOMB) {
-                                if (!(current_level[item_new_x][item_new_y].content & BOX || current_level[item_new_x][item_new_y].content & BOMB)) {
-                                    if(current_level[item_new_x][item_new_y].content & WALL) {
+                            // Bomb pushing
+                            else if (pushed_content & BOMB) {
+                                if (!(pushed_to_content & BOX || pushed_to_content & BOMB)) {
+                                    if(pushed_to_content & WALL) {
+                                        // KABOOM!
                                         current_level[item_new_x][item_new_y].content = 0;
                                     }
                                     else {
                                         current_level[item_new_x][item_new_y].content |= BOMB;
                                     }
-                                    current_level[newX][newY].content &= ~BOMB;
-                                    player.x = newX;
-                                    player.y = newY;
+                                    current_level[new_x][new_y].content &= ~BOMB;
+                                    player.x = new_x;
+                                    player.y = new_y;
                                     moves = moves + 1;
                                 }
                             }
 
-                            else if (!(current_level[newX][newY].content & BOX)) { // Player can move to EMPTY or TARGET
-                                player.x = newX;
-                                player.y = newY;
+                            else {
+                                player.x = new_x;
+                                player.y = new_y;
                                 moves = moves + 1;
                             }
 
@@ -254,6 +253,7 @@ int main() {
                     DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, RED);
                 }
                 if (!(current_level[x][y].content & (BOX | TARGET | WALL | BOMB ))) {
+                    // Draw grid lines
                     /*DrawRectangleLines(tileX, tileY, TILE_SIZE, TILE_SIZE, DARKGRAY);*/
 
                 }
@@ -265,17 +265,25 @@ int main() {
         unsigned char selected_tile;
         if(editor_mode) {
             Rectangle tile_select = {0, SCREEN_HEIGHT - EDITOR_HEIGHT, BUTTON_WIDTH, EDITOR_HEIGHT};
+
+            // Can we use emojis here?
             int wtf = GuiToggleGroup(tile_select, "EMPTY;BOMB;START;TARGET;BOX;WALL", &active_tile_selector);
+
+            // active_tile_selector is 0, 1, ..., N. But we want the bit mask representation.
             if(active_tile_selector == 0) {
                 selected_tile = 0;
             }
             else {
-                selected_tile = (char) (1 << (active_tile_selector - 1));
+                selected_tile = (unsigned char) (1 << (active_tile_selector - 1));
             }
+
             Rectangle save_button_rect = {SCREEN_WIDTH - BUTTON_WIDTH, SCREEN_HEIGHT - EDITOR_HEIGHT, BUTTON_WIDTH, EDITOR_HEIGHT};
             GuiButton(save_button_rect, "Save");
+
+            // Level selector / loader
             if(GuiSpinner((Rectangle){(SCREEN_WIDTH - 100) / 2.0f, SCREEN_HEIGHT - EDITOR_HEIGHT, 100, EDITOR_HEIGHT}, "Level", &spinner_val, 0, 10, spinner_edit_mode)) spinner_edit_mode = !spinner_edit_mode;
             GuiButton((Rectangle) { SCREEN_WIDTH / 2.0f + 50.0f, SCREEN_HEIGHT - EDITOR_HEIGHT, BUTTON_WIDTH, EDITOR_HEIGHT}, "Load");
+
             if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                 Vector2 cursor = GetMousePosition();
                 bool save_button_is_clicked = cursor.x > SCREEN_WIDTH - BUTTON_WIDTH && cursor.y > SCREEN_HEIGHT - EDITOR_HEIGHT;
@@ -288,15 +296,17 @@ int main() {
                     loadLevel();
                 }
             }
+
+            // Draw new tile
             if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
                 Vector2 cursor = GetMousePosition();
-                bool toggle_group_is_clicked = (cursor.x < 310 || cursor.x > SCREEN_WIDTH - BUTTON_WIDTH) && (cursor.y > (SCREEN_HEIGHT - EDITOR_HEIGHT)); 
+                bool toggle_group_is_clicked = (cursor.x < BUTTON_WIDTH*content_length + content_length * 10.0f || cursor.x > SCREEN_WIDTH - BUTTON_WIDTH) && (cursor.y > (SCREEN_HEIGHT - EDITOR_HEIGHT)); 
                 bool save_button_is_clicked = cursor.x > SCREEN_WIDTH - BUTTON_WIDTH && cursor.y > SCREEN_HEIGHT - EDITOR_HEIGHT;
                 if(!toggle_group_is_clicked && !save_button_is_clicked) {
                     int gridX = cursor.x / TILE_SIZE;
                     int gridY = (cursor.y - HEADER_HEIGHT) / TILE_SIZE;
-                    // Remove previous starting pos so we only have one
                     if(selected_tile & START) {
+                        // Remove previous starting pos so we only have one
                         for(int x=0; x<GRID_WIDTH; x++) {
                             for(int y=0; y<GRID_HEIGHT; y++) {
                                 current_level[x][y].content &= ~START;
@@ -310,6 +320,7 @@ int main() {
            }
         }
         if (gameWon) {
+            // TODO: this drawing is not good.
             DrawText("You Win! Press Space for next level!", SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2, 30, YELLOW);
             if(IsKeyPressed(KEY_SPACE)) {
                 level_num++;
@@ -327,7 +338,6 @@ int main() {
         }
         EndDrawing();
         if(strlen(debug_string) > 0) {
-            /*puts(debug_string);*/
             TraceLog(LOG_DEBUG, debug_string);
         }
     }
