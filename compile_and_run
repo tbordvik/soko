@@ -1,0 +1,6 @@
+echo "Compiling Sokoban Game!"
+cd build && ./premake5 gmake2
+cd ..
+make
+echo "Running Debug exectuable"
+./bin/Debug/soko

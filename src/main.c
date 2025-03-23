@@ -6,12 +6,12 @@
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
-#define TILE_SIZE 64
+#define TILE_SIZE 32
 #define GRID_WIDTH 20
 #define GRID_HEIGHT 20
 #define HEADER_HEIGHT 30 // Space at the top for score and messages
 #define EDITOR_HEIGHT 30 // Space at the bottom in editing mode.
-#define BUTTON_WIDTH 60
+#define BUTTON_WIDTH 30
 #define SCREEN_WIDTH (TILE_SIZE * GRID_WIDTH)
 #define SCREEN_HEIGHT (TILE_SIZE * GRID_HEIGHT + HEADER_HEIGHT)
 
@@ -30,15 +30,17 @@ typedef struct {
 #define BOX         0b01000
 #define TARGET      0b00100
 #define START       0b00010
-Tile level[GRID_WIDTH][GRID_HEIGHT] = {0};
+#define BOMB        0b00001
+
 Tile current_level[GRID_WIDTH][GRID_HEIGHT] = {0};
 
 Player player;
 bool gameWon = false;
-int level_num = 0;
+unsigned int level_num = 0;
 int moves = 0;
 bool editor_mode = false;
 int active_tile_selector = 0;
+int content_length = 5;
 
 bool spinner_edit_mode = false;
 int spinner_val = 0;
@@ -124,10 +126,10 @@ int main() {
     SetTargetFPS(60);
     loadLevel();
 
-    Texture2D wall = LoadTexture("resources/wall.png");
-    Texture2D target = LoadTexture("resources/target.png");
-    Texture2D box = LoadTexture("resources/box.png");
-    Texture2D player_texture = LoadTexture("resources/player.png");
+    Texture2D wall = LoadTexture("resources/wall32.png");
+    Texture2D target = LoadTexture("resources/target32.png");
+    Texture2D box = LoadTexture("resources/box32.png");
+    Texture2D player_texture = LoadTexture("resources/player32.png");
     Rectangle tile_src = {0, 0, TILE_SIZE, TILE_SIZE};
     TraceLog(LOG_WARNING, "asdf");
     char debug_string[128];
@@ -138,8 +140,6 @@ int main() {
         }
     }
 
-    // restartLevel();
-    // restartLevel(&current_level);
     while (!WindowShouldClose()) {
         // Game Logic
         if (!gameWon && !editor_mode) {
@@ -164,20 +164,16 @@ int main() {
                     if (dy == -1 && current_level[newX][newY].content & WALL) canMove = false;
 
                     if (canMove) {
-                        // Check for box pushing
-                        if (current_level[newX][newY].content & BOX) {
-                            int boxNewX = newX + dx;
-                            int boxNewY = newY + dy;
-                            if (boxNewX >= 0 && boxNewX < GRID_WIDTH && boxNewY >= 0 && boxNewY < GRID_HEIGHT) {
-                                bool canPush = true;
-                                if (dx == 1 && current_level[boxNewX][boxNewY].content & WALL) canPush = false;
-                                if (dx == -1 && current_level[boxNewX][boxNewY].content & WALL) canPush = false;
-                                if (dy == 1 && current_level[boxNewX][boxNewY].content & WALL) canPush = false;
-                                if (dy == -1 && current_level[boxNewX][boxNewY].content & WALL) canPush = false;
 
-                                // Allow pushing onto EMPTY or TARGET, but not another BOX
-                                if (canPush && !(current_level[boxNewX][boxNewY].content & BOX)) {
-                                    current_level[boxNewX][boxNewY].content |= BOX; // Add BOX to new position
+                        // The pushed item's (possible) new pos
+                        int item_new_x = newX + dx;
+                        int item_new_y = newY + dy;
+
+                        if (item_new_x >= 0 && item_new_x < GRID_WIDTH && item_new_y >= 0 && item_new_y < GRID_HEIGHT) {
+                            // Check for box pushing
+                            if (current_level[newX][newY].content & BOX) {
+                                if (!(current_level[item_new_x][item_new_y].content & WALL || current_level[item_new_x][item_new_y].content & BOX)) {
+                                    current_level[item_new_x][item_new_y].content |= BOX; // Add BOX to new position
                                     current_level[newX][newY].content &= ~BOX;      // Remove BOX from old position
                                     player.x = newX;
                                     player.y = newY;
@@ -189,10 +185,28 @@ int main() {
                                     }
                                 }
                             }
-                        } else if (!(current_level[newX][newY].content & BOX)) { // Player can move to EMPTY or TARGET
-                            player.x = newX;
-                            player.y = newY;
-                            moves = moves + 1;
+                            // Check for bomb pushing
+                            else if (current_level[newX][newY].content & BOMB) {
+                                if (!(current_level[item_new_x][item_new_y].content & BOX || current_level[item_new_x][item_new_y].content & BOMB)) {
+                                    if(current_level[item_new_x][item_new_y].content & WALL) {
+                                        current_level[item_new_x][item_new_y].content = 0;
+                                    }
+                                    else {
+                                        current_level[item_new_x][item_new_y].content |= BOMB;
+                                    }
+                                    current_level[newX][newY].content &= ~BOMB;
+                                    player.x = newX;
+                                    player.y = newY;
+                                    moves = moves + 1;
+                                }
+                            }
+
+                            else if (!(current_level[newX][newY].content & BOX)) { // Player can move to EMPTY or TARGET
+                                player.x = newX;
+                                player.y = newY;
+                                moves = moves + 1;
+                            }
+
                         }
                     }
                 }
@@ -202,7 +216,7 @@ int main() {
         BeginDrawing();
         ClearBackground(BLACK);
 
-        // Draw header area (strictly within HEADER_HEIGHT)
+        // Draw header stuff
         DrawRectangle(0, 0, SCREEN_WIDTH, HEADER_HEIGHT, DARKGRAY);
         char scoreText[32];
         sprintf(scoreText, "Moves: %d", moves);
@@ -214,6 +228,7 @@ int main() {
 
         char restartText[32] = "R to restart";
         DrawText(restartText, SCREEN_WIDTH - 150, 10, 17, BROWN);
+
         // Draw game grid (shifted down by HEADER_HEIGHT)
         for (int y = 0; y < GRID_HEIGHT; y++) {
             for (int x = 0; x < GRID_WIDTH; x++) {
@@ -233,20 +248,30 @@ int main() {
                     DrawTextureRec(wall, tile_src, (Vector2){tileX, tileY}, WHITE);
                     /*DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, RED);*/
                 }
-                if (!(current_level[x][y].content & (BOX | TARGET | WALL))) {
+ 
+                if(current_level[x][y].content & BOMB) {
+                    /*DrawTextureRec(wall, tile_src, (Vector2){tileX, tileY}, WHITE);*/
+                    DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, RED);
+                }
+                if (!(current_level[x][y].content & (BOX | TARGET | WALL | BOMB ))) {
                     /*DrawRectangleLines(tileX, tileY, TILE_SIZE, TILE_SIZE, DARKGRAY);*/
 
                 }
             }
         }
-        // Draw player with proper offset
+        // Draw player
         DrawTextureRec(player_texture, tile_src, (Vector2){player.x * TILE_SIZE, player.y * TILE_SIZE + HEADER_HEIGHT}, PINK);
 
         unsigned char selected_tile;
         if(editor_mode) {
             Rectangle tile_select = {0, SCREEN_HEIGHT - EDITOR_HEIGHT, BUTTON_WIDTH, EDITOR_HEIGHT};
-            int wtf = GuiToggleGroup(tile_select, "EMPTY;START;TARGET;BOX;WALL", &active_tile_selector);
-            selected_tile = (char) (1 << active_tile_selector);
+            int wtf = GuiToggleGroup(tile_select, "EMPTY;BOMB;START;TARGET;BOX;WALL", &active_tile_selector);
+            if(active_tile_selector == 0) {
+                selected_tile = 0;
+            }
+            else {
+                selected_tile = (char) (1 << (active_tile_selector - 1));
+            }
             Rectangle save_button_rect = {SCREEN_WIDTH - BUTTON_WIDTH, SCREEN_HEIGHT - EDITOR_HEIGHT, BUTTON_WIDTH, EDITOR_HEIGHT};
             GuiButton(save_button_rect, "Save");
             if(GuiSpinner((Rectangle){(SCREEN_WIDTH - 100) / 2.0f, SCREEN_HEIGHT - EDITOR_HEIGHT, 100, EDITOR_HEIGHT}, "Level", &spinner_val, 0, 10, spinner_edit_mode)) spinner_edit_mode = !spinner_edit_mode;
@@ -285,7 +310,7 @@ int main() {
            }
         }
         if (gameWon) {
-            DrawText("You Win! Press Space for next level!", SCREEN_WIDTH / 2 - MeasureText("You Win!", 30) / 2, 40, 30, YELLOW);
+            DrawText("You Win! Press Space for next level!", SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2, 30, YELLOW);
             if(IsKeyPressed(KEY_SPACE)) {
                 level_num++;
                 gameWon = false;
@@ -303,6 +328,7 @@ int main() {
         EndDrawing();
         if(strlen(debug_string) > 0) {
             /*puts(debug_string);*/
+            TraceLog(LOG_DEBUG, debug_string);
         }
     }
     UnloadTexture(box);
