@@ -316,8 +316,7 @@ int main() {
         }
         else {
             if (gameWon) {
-                // TODO: this drawing is not good.
-                DrawText("You Win! Press Space for next level!", SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2, 30, YELLOW);
+                DrawText("Press Space for next level!", 150, SCREEN_HEIGHT / 2 - 50, 24, YELLOW);
                 if(IsKeyPressed(KEY_SPACE)) {
                     level_num++;
                     gameWon = false;
