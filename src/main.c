@@ -262,7 +262,7 @@ int main() {
             Rectangle tile_select = {0, 0, BUTTON_WIDTH, HEADER_HEIGHT};
 
             // Can we use emojis here?
-            int wtf = GuiToggleGroup(tile_select, "EMPTY;BOMB;START;TARGET;BOX;WALL", &active_tile_selector);
+            int wtf = GuiToggleGroup(tile_select, "NADA;BOMB;ME;END;BOX;WALL", &active_tile_selector);
 
             // active_tile_selector is 0, 1, ..., N. But we want the bit mask representation.
             if(active_tile_selector == 0) {
