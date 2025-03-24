@@ -8,6 +8,8 @@ E to toggle editor mode.
 
 Using [Raylib](https://www.raylib.com/), the #2 open source game engine :)
 
+Also using [raygui](https://github.com/raysan5/raygui)
+
 ### Install dependencies:
 - [Linux](https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux)
 - [Windows](https://github.com/raysan5/raylib/wiki/Working-on-Windows)
