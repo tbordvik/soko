@@ -341,6 +341,7 @@ int main() {
     UnloadTexture(player_texture);
     UnloadTexture(target);
     UnloadTexture(wall);
+    UnloadTexture(bomb);
     CloseWindow();
     return 0;
 }
