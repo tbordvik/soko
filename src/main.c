@@ -9,9 +9,8 @@
 #define TILE_SIZE 32
 #define GRID_WIDTH 20
 #define GRID_HEIGHT 20
-#define HEADER_HEIGHT 30 // Space at the top for score and messages
-#define EDITOR_HEIGHT 30 // Space at the bottom in editing mode.
-#define BUTTON_WIDTH 30
+#define HEADER_HEIGHT 30 // Space at the top for game info / editor
+#define BUTTON_WIDTH 35
 #define SCREEN_WIDTH (TILE_SIZE * GRID_WIDTH)
 #define SCREEN_HEIGHT (TILE_SIZE * GRID_HEIGHT + HEADER_HEIGHT)
 
@@ -37,7 +36,7 @@ Tile current_level[GRID_WIDTH][GRID_HEIGHT] = {0};
 // Game
 Player player;
 bool gameWon = false;
-unsigned int level_num = 0;
+int level_num = 0;
 int moves = 0;
 
 // Editor
@@ -90,18 +89,15 @@ void loadLevel() {
         }
         return;
     }
-    FILE *fp = fopen(filename, "r");
-    unsigned char level_bytes[GRID_WIDTH][GRID_HEIGHT];
-    fread(level_bytes, sizeof(level_bytes), 1, fp);
-    fclose(fp);
+    unsigned char *lvl_bytes;
+    int size = 0;
+    lvl_bytes = LoadFileData(filename, &size);
 
-    char debug_str[128];
-    for(int x = 0; x<GRID_WIDTH; x++) {
-        for(int y = 0; y<GRID_HEIGHT; y++) {
-            /*sprintf(debug_str, "[%d][%d] - %d", x, y, level_bytes[x][y]);*/
-            /*TraceLog(LOG_WARNING, debug_str);*/
-            current_level[x][y].content = level_bytes[x][y];
-        }
+    // File data is stored in order (0, 0), (0, 1), ..., (1, 0), (1, 1) ...
+    for(int i=0; i<size; i++) {
+        int x = i / GRID_WIDTH;
+        int y = i % GRID_HEIGHT;
+        current_level[x][y].content = lvl_bytes[i];
     }
     player = startPos();
     moves = 0;
@@ -116,9 +112,7 @@ void saveLevel() {
     }
     char filename[32];
     sprintf(filename, "resources/levels/level%d", level_num);
-    FILE *fp = fopen(filename, "w");
-    fwrite(bytes_to_save, sizeof(bytes_to_save), 1, fp);
-    fclose(fp);
+    SaveFileData(filename, bytes_to_save, sizeof(bytes_to_save));
 }
 
 int main() {
@@ -206,7 +200,6 @@ int main() {
                                 player.y = new_y;
                                 moves = moves + 1;
                             }
-
                         }
                     }
                 }
@@ -218,17 +211,18 @@ int main() {
 
         // Draw header stuff
         DrawRectangle(0, 0, SCREEN_WIDTH, HEADER_HEIGHT, DARKGRAY);
-        char scoreText[32];
-        sprintf(scoreText, "Moves: %d", moves);
-        DrawText(scoreText, 10, 10, 20, WHITE); // Smaller font size to fit
+        if(!editor_mode) {
+            char scoreText[32];
+            sprintf(scoreText, "Moves: %d", moves);
+            DrawText(scoreText, 10, 10, 20, WHITE); // Smaller font size to fit
 
-        char levelText[32];
-        sprintf(levelText, "Level %d", level_num + 1);
-        DrawText(levelText, (SCREEN_WIDTH / 2) - 20, 10, 20, WHITE);
+            char levelText[32];
+            sprintf(levelText, "Level %d", level_num + 1);
+            DrawText(levelText, (SCREEN_WIDTH / 2) - 20, 10, 20, WHITE);
 
-        char restartText[32] = "R to restart";
-        DrawText(restartText, SCREEN_WIDTH - 150, 10, 17, BROWN);
-
+            char restartText[32] = "R to restart";
+            DrawText(restartText, SCREEN_WIDTH - 150, 10, 17, BROWN);
+        }
         // Draw game grid (shifted down by HEADER_HEIGHT)
         for (int y = 0; y < GRID_HEIGHT; y++) {
             for (int x = 0; x < GRID_WIDTH; x++) {
@@ -265,7 +259,7 @@ int main() {
 
         unsigned char selected_tile;
         if(editor_mode) {
-            Rectangle tile_select = {0, SCREEN_HEIGHT - EDITOR_HEIGHT, BUTTON_WIDTH, EDITOR_HEIGHT};
+            Rectangle tile_select = {0, 0, BUTTON_WIDTH, HEADER_HEIGHT};
 
             // Can we use emojis here?
             int wtf = GuiToggleGroup(tile_select, "EMPTY;BOMB;START;TARGET;BOX;WALL", &active_tile_selector);
@@ -278,17 +272,18 @@ int main() {
                 selected_tile = (unsigned char) (1 << (active_tile_selector - 1));
             }
 
-            Rectangle save_button_rect = {SCREEN_WIDTH - BUTTON_WIDTH, SCREEN_HEIGHT - EDITOR_HEIGHT, BUTTON_WIDTH, EDITOR_HEIGHT};
+            Rectangle save_button_rect = {SCREEN_WIDTH - BUTTON_WIDTH, 0, BUTTON_WIDTH, HEADER_HEIGHT};
             GuiButton(save_button_rect, "Save");
 
             // Level selector / loader
-            if(GuiSpinner((Rectangle){(SCREEN_WIDTH - 100) / 2.0f, SCREEN_HEIGHT - EDITOR_HEIGHT, 100, EDITOR_HEIGHT}, "Level", &spinner_val, 0, 10, spinner_edit_mode)) spinner_edit_mode = !spinner_edit_mode;
-            GuiButton((Rectangle) { SCREEN_WIDTH / 2.0f + 50.0f, SCREEN_HEIGHT - EDITOR_HEIGHT, BUTTON_WIDTH, EDITOR_HEIGHT}, "Load");
+            if(GuiSpinner((Rectangle){(SCREEN_WIDTH - 100) / 2.0f, 0, 100, HEADER_HEIGHT}, "Level", &spinner_val, 0, 10, spinner_edit_mode)) spinner_edit_mode = !spinner_edit_mode;
+            GuiButton((Rectangle) { SCREEN_WIDTH / 2.0f + 50.0f, 0, BUTTON_WIDTH, HEADER_HEIGHT}, "Load");
 
             if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                 Vector2 cursor = GetMousePosition();
-                bool save_button_is_clicked = cursor.x > SCREEN_WIDTH - BUTTON_WIDTH && cursor.y > SCREEN_HEIGHT - EDITOR_HEIGHT;
-                bool load_button_is_clicked = (cursor.x > SCREEN_WIDTH / 2.0f + 50.0f) && (cursor.x < SCREEN_WIDTH / 2.0f + 50.0f + (float) BUTTON_WIDTH) && cursor.y > SCREEN_HEIGHT - EDITOR_HEIGHT;
+                bool header_is_clicked = cursor.y < HEADER_HEIGHT;
+                bool save_button_is_clicked = cursor.x > SCREEN_WIDTH - BUTTON_WIDTH && header_is_clicked;
+                bool load_button_is_clicked = (cursor.x > SCREEN_WIDTH / 2.0f + 50.0f) && (cursor.x < SCREEN_WIDTH / 2.0f + 50.0f + (float) BUTTON_WIDTH) && header_is_clicked;
                 if(save_button_is_clicked) {
                     saveLevel();
                 }
@@ -301,9 +296,8 @@ int main() {
             // Draw new tile
             if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
                 Vector2 cursor = GetMousePosition();
-                bool toggle_group_is_clicked = (cursor.x < BUTTON_WIDTH*content_length + content_length * 10.0f || cursor.x > SCREEN_WIDTH - BUTTON_WIDTH) && (cursor.y > (SCREEN_HEIGHT - EDITOR_HEIGHT)); 
-                bool save_button_is_clicked = cursor.x > SCREEN_WIDTH - BUTTON_WIDTH && cursor.y > SCREEN_HEIGHT - EDITOR_HEIGHT;
-                if(!toggle_group_is_clicked && !save_button_is_clicked) {
+                bool header_is_clicked = cursor.y < HEADER_HEIGHT;
+                if(!header_is_clicked) {
                     int gridX = cursor.x / TILE_SIZE;
                     int gridY = (cursor.y - HEADER_HEIGHT) / TILE_SIZE;
                     if(selected_tile & START) {
@@ -320,16 +314,17 @@ int main() {
                 }
            }
         }
-        if (gameWon) {
-            // TODO: this drawing is not good.
-            DrawText("You Win! Press Space for next level!", SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2, 30, YELLOW);
-            if(IsKeyPressed(KEY_SPACE)) {
-                level_num++;
-                gameWon = false;
-                loadLevel();
+        else {
+            if (gameWon) {
+                // TODO: this drawing is not good.
+                DrawText("You Win! Press Space for next level!", SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2, 30, YELLOW);
+                if(IsKeyPressed(KEY_SPACE)) {
+                    level_num++;
+                    gameWon = false;
+                    loadLevel();
+                }
             }
         }
-
         if(IsKeyPressed(KEY_R)) {
             loadLevel();
             gameWon = false;
