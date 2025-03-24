@@ -13,9 +13,8 @@ Install dependencies:
 - [Windows](https://github.com/raysan5/raylib/wiki/Working-on-Windows)
 - [macOS](https://github.com/raysan5/raylib/wiki/Working-on-macOS)
 
-This is only tested on linux. Sorry windows/mac people.
-
-Compile with `./compile` or to compile and run `./compile_and_run`
+- Linux users can compile with `./compile` or to compile and run `./compile_and_run`
+- Windows/mac users - Read the quickstart readme.
 
 Based on the [Raylib-Quickstart](https://github.com/raylib-extras/raylib-quickstart) template - the readme from it follows.
 
