@@ -8,11 +8,13 @@ E to toggle editor mode.
 
 Using [Raylib](https://www.raylib.com/), the #2 open source game engine :)
 
-Install dependencies:
+###Install dependencies:
 - [Linux](https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux)
 - [Windows](https://github.com/raysan5/raylib/wiki/Working-on-Windows)
 - [macOS](https://github.com/raysan5/raylib/wiki/Working-on-macOS)
 
+###Compiling:
+- VSCode users - Hopefully just building with F5 works for you :)
 - Linux users can compile with `./compile` or to compile and run `./compile_and_run`
 - Windows/mac users - Read the quickstart readme.
 
