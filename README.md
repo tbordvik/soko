@@ -16,7 +16,7 @@ Also using [raygui](https://github.com/raysan5/raygui)
 - [macOS](https://github.com/raysan5/raylib/wiki/Working-on-macOS)
 
 ### Compiling:
-- VSCode users - Hopefully just building with F5 works for you :)
+- VSCode users - Install the C/C++ Extension Pack. And then hopefully just building with F5 works for you :)
 - Linux users can compile with `./compile` or to compile and run `./compile_and_run`
 - Windows/mac users - Read the quickstart readme.
 
