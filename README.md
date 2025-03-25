@@ -20,6 +20,8 @@ Also using [raygui](https://github.com/raysan5/raygui)
 - Linux users can compile with `./compile` or to compile and run `./compile_and_run`
 - Windows/mac users - Read the quickstart readme.
 
+## Run the debug file from the project root, otherwise the resources will be missing.
+
 Based on the [Raylib-Quickstart](https://github.com/raylib-extras/raylib-quickstart) template - the readme from it follows.
 
 # Raylib-Quickstart
