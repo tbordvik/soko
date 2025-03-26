@@ -7,12 +7,12 @@
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
-
 #define TILE_SIZE 32
 #define GRID_WIDTH 20
 #define GRID_HEIGHT 20
 #define HEADER_HEIGHT 30 // Space at the top for game info / editor
 #define BUTTON_WIDTH 35
+// TODO: Find a better way to set the screen size.
 #define SCREEN_WIDTH (TILE_SIZE * GRID_WIDTH)
 #define SCREEN_HEIGHT (TILE_SIZE * GRID_HEIGHT + HEADER_HEIGHT)
 
@@ -49,6 +49,7 @@ void push(Stack *stack, char to_push) {
 typedef struct {
     unsigned char content;
 } Tile;
+
 // Bit masks for square content
 #define WALL        0b10000
 #define BOX         0b01000
@@ -176,10 +177,11 @@ int main() {
                 if (IsKeyPressed(KEY_DOWN)) buffered_key = KEY_DOWN;
             }
             else {
-                if (IsKeyPressed(KEY_RIGHT)) dx = 1;
-                else if (IsKeyPressed(KEY_LEFT)) dx = -1;
-                else if (IsKeyPressed(KEY_UP)) dy = -1;
-                else if (IsKeyPressed(KEY_DOWN)) dy = 1;
+                if (IsKeyPressed(KEY_RIGHT) || buffered_key == KEY_RIGHT) dx = 1;
+                else if (IsKeyPressed(KEY_LEFT) || buffered_key == KEY_LEFT) dx = -1;
+                else if (IsKeyPressed(KEY_UP) || buffered_key == KEY_UP) dy = -1;
+                else if (IsKeyPressed(KEY_DOWN) || buffered_key == KEY_DOWN) dy = 1;
+                buffered_key = 0;
             }
             // Move player
             int new_x = player.x + dx;

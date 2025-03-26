@@ -7,7 +7,8 @@ float delta = GetFrameTime();
 float animation_time = 0.2f;
 if(player->is_animating) {
     float dist = delta / animation_time;
-
+    // Must be a better way to do this lol..
+    // but to tired right now to simplify.
     if(player->x > player->displayX) {
         player->displayX += dist;
         if(player->displayX >= player->x) {
