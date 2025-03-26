@@ -1,3 +1,4 @@
+#include "animation.h"
 #include "raylib.h"
 #include <string.h>
 #include <stdio.h>
@@ -5,6 +6,7 @@
 
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
+
 
 #define TILE_SIZE 32
 #define GRID_WIDTH 20
@@ -14,16 +16,39 @@
 #define SCREEN_WIDTH (TILE_SIZE * GRID_WIDTH)
 #define SCREEN_HEIGHT (TILE_SIZE * GRID_HEIGHT + HEADER_HEIGHT)
 
+typedef struct {
+    // Maybe 2-3 stored keystrokes is sufficient to store.. and if the user 
+    // inputs more we overwrite the last one? So
+    //
+    // Hmm, try just storing one first and see how that goes? don't need a stack
+    // for that tho..
+    char key[32]; 
+    int top;
+} Stack;
+
+bool is_empty(Stack *stack) {
+    return stack->top == -1;
+}
+
+char pop(Stack *stack) {
+    if(is_empty(stack)) {
+        return NULL;
+    }
+    char popped = stack->key[stack->top];
+    stack->top--;
+    return popped;
+}
+
+void push(Stack *stack, char to_push) {
+    if(stack->top == 31) {
+        return;
+    }
+    stack->key[++stack->top] = to_push;
+}
 
 typedef struct {
     unsigned char content;
 } Tile;
-
-typedef struct {
-    int x;
-    int y;
-} Player;
-
 // Bit masks for square content
 #define WALL        0b10000
 #define BOX         0b01000
@@ -38,6 +63,7 @@ Player player;
 bool gameWon = false;
 int level_num = 0;
 int moves = 0;
+int buffered_key;
 
 // Editor
 bool editor_mode = false;
@@ -67,12 +93,12 @@ Player startPos() {
     for(int x=0; x<GRID_WIDTH; x++) {
         for(int y=0; y<GRID_HEIGHT; y++) {
             if(current_level[x][y].content & START) {
-                Player p = { x, y };
+                Player p = { x, y, x, y, false};
                 return p;
             }
         }
     }
-    Player p = { 0, 0 };
+    Player p = { 0, 0, 0, 0, false };
     return p;
     /*assert(false && "Must have a starting position in the level");*/
 }
@@ -134,18 +160,27 @@ int main() {
     /*        sprintf(debug_string, "[%d][%d]: %d\n", x, y, (int) current_level[x][y].content); */
     /*        TraceLog(LOG_WARNING, debug_string);*/
     /*    }*/
-    /*}*/
 
+    /*}*/
     while (!WindowShouldClose()) {
+
+        float delta = GetFrameTime();
         // Game Logic
         if (!gameWon && !editor_mode) {
             // Input handling
             int dx = 0, dy = 0;
-            if (IsKeyPressed(KEY_RIGHT)) dx = 1;
-            if (IsKeyPressed(KEY_LEFT)) dx = -1;
-            if (IsKeyPressed(KEY_UP)) dy = -1;
-            if (IsKeyPressed(KEY_DOWN)) dy = 1;
-
+            if(player.is_animating) {
+                if (IsKeyPressed(KEY_RIGHT)) buffered_key = KEY_RIGHT;
+                if (IsKeyPressed(KEY_LEFT)) buffered_key = KEY_LEFT;
+                if (IsKeyPressed(KEY_UP)) buffered_key = KEY_UP;
+                if (IsKeyPressed(KEY_DOWN)) buffered_key = KEY_DOWN;
+            }
+            else {
+                if (IsKeyPressed(KEY_RIGHT)) dx = 1;
+                else if (IsKeyPressed(KEY_LEFT)) dx = -1;
+                else if (IsKeyPressed(KEY_UP)) dy = -1;
+                else if (IsKeyPressed(KEY_DOWN)) dy = 1;
+            }
             // Move player
             int new_x = player.x + dx;
             int new_y = player.y + dy;
@@ -170,6 +205,7 @@ int main() {
                                     current_level[new_x][new_y].content &= ~BOX; 
                                     player.x = new_x;
                                     player.y = new_y;
+                                    player.is_animating = true;
                                     moves = moves + 1;
 
                                     // Check win condition after pushing a box
@@ -191,6 +227,7 @@ int main() {
                                     current_level[new_x][new_y].content &= ~BOMB;
                                     player.x = new_x;
                                     player.y = new_y;
+                                    player.is_animating = true;
                                     moves = moves + 1;
                                 }
                             }
@@ -198,6 +235,7 @@ int main() {
                             else {
                                 player.x = new_x;
                                 player.y = new_y;
+                                player.is_animating = true;
                                 moves = moves + 1;
                             }
                         }
@@ -214,14 +252,14 @@ int main() {
         if(!editor_mode) {
             char scoreText[32];
             sprintf(scoreText, "Moves: %d", moves);
-            DrawText(scoreText, 10, 10, 20, WHITE); // Smaller font size to fit
+            DrawText(scoreText, 10, 8, 20, WHITE);
 
             char levelText[32];
             sprintf(levelText, "Level %d", level_num + 1);
-            DrawText(levelText, (SCREEN_WIDTH / 2) - 20, 10, 20, WHITE);
+            DrawText(levelText, (SCREEN_WIDTH / 2) - 20, 8, 20, WHITE);
 
             char restartText[32] = "R to restart";
-            DrawText(restartText, SCREEN_WIDTH - 150, 10, 17, BROWN);
+            DrawText(restartText, SCREEN_WIDTH - 150, 8, 17, BROWN);
         }
         // Draw game grid (shifted down by HEADER_HEIGHT)
         for (int y = 0; y < GRID_HEIGHT; y++) {
@@ -254,8 +292,8 @@ int main() {
                 }
             }
         }
-        // Draw player
-        DrawTextureRec(player_texture, tile_src, (Vector2){player.x * TILE_SIZE, player.y * TILE_SIZE + HEADER_HEIGHT}, PINK);
+        animate_player(&player);
+        DrawTextureRec(player_texture, tile_src, (Vector2){player.displayX * TILE_SIZE, player.displayY * TILE_SIZE + HEADER_HEIGHT}, PINK);
 
         unsigned char selected_tile;
         if(editor_mode) {
@@ -333,7 +371,7 @@ int main() {
         }
         EndDrawing();
         if(strlen(debug_string) > 0) {
-            TraceLog(LOG_DEBUG, debug_string);
+            TraceLog(LOG_WARNING, debug_string);
         }
     }
     UnloadTexture(box);
