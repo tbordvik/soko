@@ -16,48 +16,17 @@
 #define SCREEN_WIDTH (TILE_SIZE * GRID_WIDTH)
 #define SCREEN_HEIGHT (TILE_SIZE * GRID_HEIGHT + HEADER_HEIGHT)
 
-typedef struct {
-    // Maybe 2-3 stored keystrokes is sufficient to store.. and if the user 
-    // inputs more we overwrite the last one? So
-    //
-    // Hmm, try just storing one first and see how that goes? don't need a stack
-    // for that tho..
-    char key[32]; 
-    int top;
-} Stack;
-
-bool is_empty(Stack *stack) {
-    return stack->top == -1;
-}
-
-char pop(Stack *stack) {
-    if(is_empty(stack)) {
-        return NULL;
-    }
-    char popped = stack->key[stack->top];
-    stack->top--;
-    return popped;
-}
-
-void push(Stack *stack, char to_push) {
-    if(stack->top == 31) {
-        return;
-    }
-    stack->key[++stack->top] = to_push;
-}
-
-typedef struct {
-    unsigned char content;
-} Tile;
-
 // Bit masks for square content
-#define WALL        0b10000
-#define BOX         0b01000
-#define TARGET      0b00100
-#define START       0b00010
-#define BOMB        0b00001
+#define PLAYER      0b0100000
+#define WALL        0b0010000
+#define BOX         0b0001000
+#define TARGET      0b0000100
+#define START       0b0000010
+#define BOMB        0b0000001
 
-Tile current_level[GRID_WIDTH][GRID_HEIGHT] = {0};
+#define MAX_TILES   1024
+Tile level[GRID_WIDTH][GRID_HEIGHT] = {0};
+Tile tiles[MAX_TILES] = {0};
 
 // Game
 Player player;
@@ -79,9 +48,9 @@ bool isGameWon() {
     int boxesOnTargets = 0;
     for (int x = 0; x < GRID_HEIGHT; x++) {
         for (int y = 0; y < GRID_WIDTH; y++) {
-            if (current_level[x][y].content & TARGET) {
+            if (level[x][y].content & TARGET) {
                 targets++;
-                if (current_level[x][y].content & BOX) {
+                if (level[x][y].content & BOX) {
                     boxesOnTargets++;
                 }
             }
@@ -93,7 +62,7 @@ bool isGameWon() {
 Player startPos() {
     for(int x=0; x<GRID_WIDTH; x++) {
         for(int y=0; y<GRID_HEIGHT; y++) {
-            if(current_level[x][y].content & START) {
+            if(level[x][y].content & START) {
                 Player p = { x, y, x, y, false};
                 return p;
             }
@@ -111,7 +80,7 @@ void loadLevel() {
     if(!FileExists(filename)) {
         for(int x=0; x<GRID_WIDTH; x++) {
             for(int y=0; y<GRID_HEIGHT; y++) {
-                current_level[x][y].content = 0;
+                level[x][y] = (Tile) { 0, x, y, x, y, false };
             }
         }
         return;
@@ -124,7 +93,7 @@ void loadLevel() {
     for(int i=0; i<size; i++) {
         int x = i / GRID_WIDTH;
         int y = i % GRID_HEIGHT;
-        current_level[x][y].content = lvl_bytes[i];
+        level[x][y] = (Tile) { lvl_bytes[i], x, y, x, y, false };
     }
     player = startPos();
     moves = 0;
@@ -134,7 +103,7 @@ void saveLevel() {
     unsigned char bytes_to_save[GRID_WIDTH][GRID_HEIGHT];
     for(int x=0; x<GRID_WIDTH; x++) {
         for(int y=0; y<GRID_HEIGHT; y++) {
-            bytes_to_save[x][y] = current_level[x][y].content;
+            bytes_to_save[x][y] = level[x][y].content;
         }
     }
     char filename[32];
@@ -155,10 +124,10 @@ int main() {
 
     loadLevel();
 
-    char debug_string[128];
+    char debug_string[128] = "";
     /*for(int x=0; x<GRID_WIDTH; x++) {*/
     /*    for(int y=0; y<GRID_HEIGHT; y++) {*/
-    /*        sprintf(debug_string, "[%d][%d]: %d\n", x, y, (int) current_level[x][y].content); */
+    /*        sprintf(debug_string, "[%d][%d]: %d\n", x, y, (int) level[x][y].content); */
     /*        TraceLog(LOG_WARNING, debug_string);*/
     /*    }*/
 
@@ -171,16 +140,16 @@ int main() {
             // Input handling
             int dx = 0, dy = 0;
             if(player.is_animating) {
-                if (IsKeyPressed(KEY_RIGHT)) buffered_key = KEY_RIGHT;
-                if (IsKeyPressed(KEY_LEFT)) buffered_key = KEY_LEFT;
-                if (IsKeyPressed(KEY_UP)) buffered_key = KEY_UP;
-                if (IsKeyPressed(KEY_DOWN)) buffered_key = KEY_DOWN;
+                if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) buffered_key = KEY_RIGHT;
+                if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) buffered_key = KEY_LEFT;
+                if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) buffered_key = KEY_UP;
+                if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) buffered_key = KEY_DOWN;
             }
             else {
-                if (IsKeyPressed(KEY_RIGHT) || buffered_key == KEY_RIGHT) dx = 1;
-                else if (IsKeyPressed(KEY_LEFT) || buffered_key == KEY_LEFT) dx = -1;
-                else if (IsKeyPressed(KEY_UP) || buffered_key == KEY_UP) dy = -1;
-                else if (IsKeyPressed(KEY_DOWN) || buffered_key == KEY_DOWN) dy = 1;
+                if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)|| buffered_key == KEY_RIGHT) dx = 1;
+                else if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A) || buffered_key == KEY_LEFT) dx = -1;
+                else if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W) || buffered_key == KEY_UP) dy = -1;
+                else if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S) || buffered_key == KEY_DOWN) dy = 1;
                 buffered_key = 0;
             }
             // Move player
@@ -189,22 +158,27 @@ int main() {
             if(dx != 0 || dy != 0) {
 
                 if (new_x >= 0 && new_y < GRID_WIDTH && new_y >= 0 && new_y < GRID_HEIGHT) {
-                    unsigned char pushed_content = current_level[new_x][new_y].content;
+                    unsigned char pushed_content = level[new_x][new_y].content;
                     // Check walls blocking movement
                     if (!(pushed_content & WALL)) {
 
                         // The pushed item's new pos (maybe)
                         int item_new_x = new_x + dx;
                         int item_new_y = new_y + dy;
-                        unsigned char pushed_to_content = current_level[item_new_x][item_new_y].content;
+                        unsigned char pushed_to_content = level[item_new_x][item_new_y].content;
 
                         if (item_new_x >= 0 && item_new_x < GRID_WIDTH && item_new_y >= 0 && item_new_y < GRID_HEIGHT) {
                             // Box pushing
                             if (pushed_content & BOX) {
                                 bool can_push_box = !(pushed_to_content & WALL || pushed_to_content & BOX || pushed_to_content & BOMB); 
                                 if (can_push_box) {
-                                    current_level[item_new_x][item_new_y].content |= BOX;
-                                    current_level[new_x][new_y].content &= ~BOX; 
+                                    Tile *from = &level[new_x][new_y];
+                                    Tile *to = &level[item_new_x][item_new_y];
+                                    from->content &= ~BOX; 
+                                    to->content |= BOX;
+                                    to->display_x = new_x;
+                                    to->display_y = new_y;
+                                    to->is_animating = true;
                                     player.x = new_x;
                                     player.y = new_y;
                                     player.is_animating = true;
@@ -219,14 +193,19 @@ int main() {
                             // Bomb pushing
                             else if (pushed_content & BOMB) {
                                 if (!(pushed_to_content & BOX || pushed_to_content & BOMB)) {
+                                    Tile *from = &level[new_x][new_y];
+                                    Tile *to = &level[item_new_x][item_new_y];
                                     if(pushed_to_content & WALL) {
                                         // KABOOM!
-                                        current_level[item_new_x][item_new_y].content = 0;
+                                        to->content = 0;
                                     }
                                     else {
-                                        current_level[item_new_x][item_new_y].content |= BOMB;
+                                        to->content |= BOMB;
                                     }
-                                    current_level[new_x][new_y].content &= ~BOMB;
+                                    from->content &= ~BOMB;
+                                    to->display_x = new_x;
+                                    to->display_y = new_y;
+                                    to->is_animating = true;
                                     player.x = new_x;
                                     player.y = new_y;
                                     player.is_animating = true;
@@ -263,31 +242,30 @@ int main() {
             char restartText[32] = "R to restart";
             DrawText(restartText, SCREEN_WIDTH - 150, 8, 17, BROWN);
         }
-        // Draw game grid (shifted down by HEADER_HEIGHT)
+
+        // Grid
         for (int y = 0; y < GRID_HEIGHT; y++) {
             for (int x = 0; x < GRID_WIDTH; x++) {
-                int tileX = x * TILE_SIZE;
-                int tileY = y * TILE_SIZE + HEADER_HEIGHT;
+                Tile *tile = &level[x][y];
+                animate_tile(tile);
+                int tile_x = tile->display_x * TILE_SIZE;
+                int tile_y = tile->display_y * TILE_SIZE + HEADER_HEIGHT;
+                Vector2 pos = { tile_x, tile_y };
 
                 // Draw tile contents
-                if (current_level[x][y].content & TARGET) {
-                    DrawTextureRec(target, tile_src, (Vector2){tileX, tileY}, WHITE);
-                    /*DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, GREEN);*/
+                if (tile->content & TARGET) {
+                    DrawTextureRec(target, tile_src, pos, WHITE);
                 }
-                if (current_level[x][y].content & BOX) {
-                    DrawTextureRec(box, tile_src, (Vector2){tileX, tileY}, WHITE);
-                    /*DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, BROWN);*/
+                if(tile->content & WALL) {
+                    DrawTextureRec(wall, tile_src, pos, WHITE);
                 }
-                if(current_level[x][y].content & WALL) {
-                    DrawTextureRec(wall, tile_src, (Vector2){tileX, tileY}, WHITE);
-                    /*DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, RED);*/
+                if (tile->content & BOX) {
+                    DrawTextureRec(box, tile_src, pos, WHITE);
                 }
- 
-                if(current_level[x][y].content & BOMB) {
-                    DrawTextureRec(bomb, tile_src, (Vector2){tileX, tileY}, WHITE);
-                    /*DrawRectangle(tileX, tileY, TILE_SIZE, TILE_SIZE, RED);*/
+                if(tile->content & BOMB) {
+                    DrawTextureRec(bomb, tile_src, pos, WHITE);
                 }
-                if (!(current_level[x][y].content & (BOX | TARGET | WALL | BOMB ))) {
+                if (!(tile->content & (BOX | TARGET | WALL | BOMB ))) {
                     // Draw grid lines
                     /*DrawRectangleLines(tileX, tileY, TILE_SIZE, TILE_SIZE, DARKGRAY);*/
 
@@ -344,13 +322,13 @@ int main() {
                         // Remove previous starting pos so we only have one
                         for(int x=0; x<GRID_WIDTH; x++) {
                             for(int y=0; y<GRID_HEIGHT; y++) {
-                                current_level[x][y].content &= ~START;
+                                level[x][y].content &= ~START;
                             }
                         }
                         player.x = gridX;
                         player.y = gridY;
                     }
-                    current_level[gridX][gridY].content = selected_tile;
+                    level[gridX][gridY].content = selected_tile;
                 }
            }
         }
