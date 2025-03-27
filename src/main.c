@@ -24,7 +24,10 @@
 #define START       0b0000010
 #define BOMB        0b0000001
 
+#define MAX_TILES   1024
 Tile level[GRID_WIDTH][GRID_HEIGHT] = {0};
+Tile tiles[MAX_TILES] = {0};
+
 
 // Game
 Player player;
@@ -172,15 +175,10 @@ int main() {
                                 if (can_push_box) {
                                     Tile *from = &level[new_x][new_y];
                                     Tile *to = &level[item_new_x][item_new_y];
-                                    Tile *temp;
-                                    temp = from;
-                                    from = to;
-                                    to = temp;
-                                    /*level[item_new_x][item_new_y].content |= BOX;*/
                                     from->content &= ~BOX; 
                                     to->content |= BOX;
-                                    to->grid_x = item_new_x;
-                                    to->grid_y = item_new_y;
+                                    to->display_x = new_x;
+                                    to->display_y = new_y;
                                     to->is_animating = true;
                                     player.x = new_x;
                                     player.y = new_y;
@@ -196,14 +194,19 @@ int main() {
                             // Bomb pushing
                             else if (pushed_content & BOMB) {
                                 if (!(pushed_to_content & BOX || pushed_to_content & BOMB)) {
+                                    Tile *from = &level[new_x][new_y];
+                                    Tile *to = &level[item_new_x][item_new_y];
                                     if(pushed_to_content & WALL) {
                                         // KABOOM!
-                                        level[item_new_x][item_new_y].content = 0;
+                                        to->content = 0;
                                     }
                                     else {
-                                        level[item_new_x][item_new_y].content |= BOMB;
+                                        to->content |= BOMB;
                                     }
-                                    level[new_x][new_y].content &= ~BOMB;
+                                    from->content &= BOMB;
+                                    to->display_x = new_x;
+                                    to->display_y = new_y;
+                                    to->is_animating = true;
                                     player.x = new_x;
                                     player.y = new_y;
                                     player.is_animating = true;
