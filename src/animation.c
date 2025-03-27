@@ -1,12 +1,13 @@
 #include "raylib.h"
 #include "animation.h"
 
+#define ANIM_TIME 0.15f // In seconds.
+
 // Calculate the current animation frame
 void animate_player(Player *player) {
 float delta = GetFrameTime();
-float animation_time = 0.2f;
 if(player->is_animating) {
-    float dist = delta / animation_time;
+    float dist = delta / ANIM_TIME;
     // Must be a better way to do this lol..
     // but to tired right now to simplify.
     if(player->x > player->displayX) {
@@ -43,7 +44,7 @@ void animate_tile(Tile *tile) {
 float delta = GetFrameTime();
 float animation_time = 0.2f;
 if(tile->is_animating) {
-    float dist = delta / animation_time;
+    float dist = delta / ANIM_TIME;
     // Must be a better way to do this lol..
     // but to tired right now to simplify.
     if(tile->grid_x > tile->display_x) {
