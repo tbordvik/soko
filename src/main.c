@@ -28,7 +28,6 @@
 Tile level[GRID_WIDTH][GRID_HEIGHT] = {0};
 Tile tiles[MAX_TILES] = {0};
 
-
 // Game
 Player player;
 bool gameWon = false;
@@ -141,16 +140,16 @@ int main() {
             // Input handling
             int dx = 0, dy = 0;
             if(player.is_animating) {
-                if (IsKeyPressed(KEY_RIGHT)) buffered_key = KEY_RIGHT;
-                if (IsKeyPressed(KEY_LEFT)) buffered_key = KEY_LEFT;
-                if (IsKeyPressed(KEY_UP)) buffered_key = KEY_UP;
-                if (IsKeyPressed(KEY_DOWN)) buffered_key = KEY_DOWN;
+                if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) buffered_key = KEY_RIGHT;
+                if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) buffered_key = KEY_LEFT;
+                if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) buffered_key = KEY_UP;
+                if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) buffered_key = KEY_DOWN;
             }
             else {
-                if (IsKeyPressed(KEY_RIGHT) || buffered_key == KEY_RIGHT) dx = 1;
-                else if (IsKeyPressed(KEY_LEFT) || buffered_key == KEY_LEFT) dx = -1;
-                else if (IsKeyPressed(KEY_UP) || buffered_key == KEY_UP) dy = -1;
-                else if (IsKeyPressed(KEY_DOWN) || buffered_key == KEY_DOWN) dy = 1;
+                if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)|| buffered_key == KEY_RIGHT) dx = 1;
+                else if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A) || buffered_key == KEY_LEFT) dx = -1;
+                else if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W) || buffered_key == KEY_UP) dy = -1;
+                else if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S) || buffered_key == KEY_DOWN) dy = 1;
                 buffered_key = 0;
             }
             // Move player
