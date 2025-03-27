@@ -2,9 +2,10 @@
 
 A clone of the "famous" Sokoban game.
 
-Arrows to move.
-R to restart.
-E to toggle editor mode.
+Controls:
+- Arrows or WASD to move.
+- R to restart.
+- E to toggle editor mode.
 
 Using [Raylib](https://www.raylib.com/), the #2 open source game engine :)
 
