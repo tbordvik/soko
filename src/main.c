@@ -202,7 +202,7 @@ int main() {
                                     else {
                                         to->content |= BOMB;
                                     }
-                                    from->content &= BOMB;
+                                    from->content &= ~BOMB;
                                     to->display_x = new_x;
                                     to->display_y = new_y;
                                     to->is_animating = true;
