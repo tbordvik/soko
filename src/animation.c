@@ -38,4 +38,41 @@ if(player->is_animating) {
     }
 }
 }
+// Calculate the current animation frame
+void animate_tile(Tile *tile) {
+float delta = GetFrameTime();
+float animation_time = 0.2f;
+if(tile->is_animating) {
+    float dist = delta / animation_time;
+    // Must be a better way to do this lol..
+    // but to tired right now to simplify.
+    if(tile->grid_x > tile->display_x) {
+        tile->display_x += dist;
+        if(tile->display_x >= tile->grid_x) {
+            tile->display_x = tile->grid_x;
+            tile->is_animating = false;
+        }
+    } else if (tile->grid_x < tile->display_x) {
+        tile->display_x -= dist;
+        if(tile->display_x <= tile->grid_x) {
+            tile->display_x = tile->grid_x;
+            tile->is_animating = false;
+        }
+    }
+    if(tile->grid_y > tile->display_y) {
+        tile->display_y += dist;
+        if(tile->display_y >= tile->grid_y) {
+            tile->display_y = tile->grid_y;
+            tile->is_animating = false;
+        }
+    }
+    else if (tile->grid_y < tile->display_y) {
+        tile->display_y -= dist;
+        if(tile->display_y <= tile->grid_y) {
+            tile->display_y = tile->grid_y;
+            tile->is_animating = false;
+        }
+    }
+}
+}
 
