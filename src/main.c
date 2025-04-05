@@ -251,13 +251,14 @@ int main() {
                 int tile_x = tile->display_x * TILE_SIZE;
                 int tile_y = tile->display_y * TILE_SIZE + HEADER_HEIGHT;
                 Vector2 pos = { tile_x, tile_y };
+                Vector2 immovable_pos = { tile->grid_x * TILE_SIZE, tile->grid_y * TILE_SIZE + HEADER_HEIGHT};
 
                 // Draw tile contents
                 if (tile->content & TARGET) {
-                    DrawTextureRec(target, tile_src, pos, WHITE);
+                    DrawTextureRec(target, tile_src, immovable_pos, WHITE);
                 }
                 if(tile->content & WALL) {
-                    DrawTextureRec(wall, tile_src, pos, WHITE);
+                    DrawTextureRec(wall, tile_src, immovable_pos, WHITE);
                 }
                 if (tile->content & BOX) {
                     DrawTextureRec(box, tile_src, pos, WHITE);
@@ -325,8 +326,8 @@ int main() {
                                 level[x][y].content &= ~START;
                             }
                         }
-                        player.x = gridX;
-                        player.y = gridY;
+                        player.x = player.displayX = gridX;
+                        player.y = player.displayY = gridY;
                     }
                     level[gridX][gridY].content = selected_tile;
                 }
