@@ -111,6 +111,30 @@ void saveLevel() {
     SaveFileData(filename, bytes_to_save, sizeof(bytes_to_save));
 }
 
+Vector2 title_pos = { -400, 250 };
+Vector2 subtitle_pos = { 180, SCREEN_HEIGHT + 100 };
+
+void show_intro_screen() {
+    float delta = GetFrameTime();
+    float animation_time = 1.5f;
+    char* title = "Sokoban Clone";
+    char* subtitle = "Press Space to start!";
+    bool show_subtitle = false;
+
+    title_pos.x = title_pos.x + delta * 500 / animation_time; 
+    if(title_pos.x > 200) {
+        title_pos.x = 200;
+        subtitle_pos.y = subtitle_pos.y - delta * 280 / animation_time;
+        show_subtitle = true;
+        if(subtitle_pos.y < 400) {
+            subtitle_pos.y = 400;
+        }
+    }
+
+    DrawText(title, title_pos.x, title_pos.y, 32, ORANGE);
+    DrawText(subtitle, subtitle_pos.x, subtitle_pos.y, 24, ORANGE);
+}
+
 int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sokoban Game");
     SetTargetFPS(60);
@@ -132,11 +156,11 @@ int main() {
     /*    }*/
 
     /*}*/
+    bool show_intro = true;
     while (!WindowShouldClose()) {
-
         float delta = GetFrameTime();
         // Game Logic
-        if (!gameWon && !editor_mode) {
+        if (!show_intro && !gameWon && !editor_mode) {
             // Input handling
             int dx = 0, dy = 0;
             if(player.is_animating) {
@@ -228,127 +252,135 @@ int main() {
         BeginDrawing();
         ClearBackground(BLACK);
 
-        // Draw header stuff
-        DrawRectangle(0, 0, SCREEN_WIDTH, HEADER_HEIGHT, DARKGRAY);
-        if(!editor_mode) {
-            char scoreText[32];
-            sprintf(scoreText, "Moves: %d", moves);
-            DrawText(scoreText, 10, 8, 20, WHITE);
-
-            char levelText[32];
-            sprintf(levelText, "Level %d", level_num + 1);
-            DrawText(levelText, (SCREEN_WIDTH / 2) - 20, 8, 20, WHITE);
-
-            char restartText[32] = "R to restart";
-            DrawText(restartText, SCREEN_WIDTH - 150, 8, 17, BROWN);
-        }
-
-        // Grid
-        for (int y = 0; y < GRID_HEIGHT; y++) {
-            for (int x = 0; x < GRID_WIDTH; x++) {
-                Tile *tile = &level[x][y];
-                animate_tile(tile);
-                int tile_x = tile->display_x * TILE_SIZE;
-                int tile_y = tile->display_y * TILE_SIZE + HEADER_HEIGHT;
-                Vector2 pos = { tile_x, tile_y };
-                Vector2 immovable_pos = { tile->grid_x * TILE_SIZE, tile->grid_y * TILE_SIZE + HEADER_HEIGHT};
-
-                // Draw tile contents
-                if (tile->content & TARGET) {
-                    DrawTextureRec(target, tile_src, immovable_pos, WHITE);
-                }
-                if(tile->content & WALL) {
-                    DrawTextureRec(wall, tile_src, immovable_pos, WHITE);
-                }
-                if (tile->content & BOX) {
-                    DrawTextureRec(box, tile_src, pos, WHITE);
-                }
-                if(tile->content & BOMB) {
-                    DrawTextureRec(bomb, tile_src, pos, WHITE);
-                }
-                if (!(tile->content & (BOX | TARGET | WALL | BOMB ))) {
-                    // Draw grid lines
-                    /*DrawRectangleLines(tileX, tileY, TILE_SIZE, TILE_SIZE, DARKGRAY);*/
-
-                }
+        if(show_intro) {
+            show_intro_screen();
+            if(IsKeyPressed(KEY_SPACE)) {
+                show_intro = false;
             }
-        }
-        animate_player(&player);
-        DrawTextureRec(player_texture, tile_src, (Vector2){player.displayX * TILE_SIZE, player.displayY * TILE_SIZE + HEADER_HEIGHT}, PINK);
-
-        unsigned char selected_tile;
-        if(editor_mode) {
-            Rectangle tile_select = {0, 0, BUTTON_WIDTH, HEADER_HEIGHT};
-
-            // Can we use emojis here?
-            int wtf = GuiToggleGroup(tile_select, "NADA;BOMB;ME;END;BOX;WALL", &active_tile_selector);
-
-            // active_tile_selector is 0, 1, ..., N. But we want the bit mask representation.
-            if(active_tile_selector == 0) {
-                selected_tile = 0;
-            }
-            else {
-                selected_tile = (unsigned char) (1 << (active_tile_selector - 1));
-            }
-
-            Rectangle save_button_rect = {SCREEN_WIDTH - BUTTON_WIDTH, 0, BUTTON_WIDTH, HEADER_HEIGHT};
-            GuiButton(save_button_rect, "Save");
-
-            // Level selector / loader
-            if(GuiSpinner((Rectangle){(SCREEN_WIDTH - 100) / 2.0f, 0, 100, HEADER_HEIGHT}, "Level", &spinner_val, 0, 10, spinner_edit_mode)) spinner_edit_mode = !spinner_edit_mode;
-            GuiButton((Rectangle) { SCREEN_WIDTH / 2.0f + 50.0f, 0, BUTTON_WIDTH, HEADER_HEIGHT}, "Load");
-
-            if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                Vector2 cursor = GetMousePosition();
-                bool header_is_clicked = cursor.y < HEADER_HEIGHT;
-                bool save_button_is_clicked = cursor.x > SCREEN_WIDTH - BUTTON_WIDTH && header_is_clicked;
-                bool load_button_is_clicked = (cursor.x > SCREEN_WIDTH / 2.0f + 50.0f) && (cursor.x < SCREEN_WIDTH / 2.0f + 50.0f + (float) BUTTON_WIDTH) && header_is_clicked;
-                if(save_button_is_clicked) {
-                    saveLevel();
-                }
-                if(load_button_is_clicked) {
-                    level_num = spinner_val;
-                    loadLevel();
-                }
-            }
-
-            // Draw new tile
-            if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-                Vector2 cursor = GetMousePosition();
-                bool header_is_clicked = cursor.y < HEADER_HEIGHT;
-                if(!header_is_clicked) {
-                    int gridX = cursor.x / TILE_SIZE;
-                    int gridY = (cursor.y - HEADER_HEIGHT) / TILE_SIZE;
-                    if(selected_tile & START) {
-                        // Remove previous starting pos so we only have one
-                        for(int x=0; x<GRID_WIDTH; x++) {
-                            for(int y=0; y<GRID_HEIGHT; y++) {
-                                level[x][y].content &= ~START;
-                            }
-                        }
-                        player.x = player.displayX = gridX;
-                        player.y = player.displayY = gridY;
-                    }
-                    level[gridX][gridY].content = selected_tile;
-                }
-           }
         }
         else {
-            if (gameWon) {
-                DrawText("Press Space for next level!", 150, SCREEN_HEIGHT / 2 - 50, 24, YELLOW);
-                if(IsKeyPressed(KEY_SPACE)) {
-                    level_num++;
-                    gameWon = false;
-                    loadLevel();
+            // Draw header stuff
+            DrawRectangle(0, 0, SCREEN_WIDTH, HEADER_HEIGHT, DARKGRAY);
+            if(!editor_mode) {
+                char scoreText[32];
+                sprintf(scoreText, "Moves: %d", moves);
+                DrawText(scoreText, 10, 8, 20, WHITE);
+
+                char levelText[32];
+                sprintf(levelText, "Level %d", level_num + 1);
+                DrawText(levelText, (SCREEN_WIDTH / 2) - 20, 8, 20, WHITE);
+
+                char restartText[32] = "R to restart";
+                DrawText(restartText, SCREEN_WIDTH - 150, 8, 17, BROWN);
+            }
+
+            // Grid
+            for (int y = 0; y < GRID_HEIGHT; y++) {
+                for (int x = 0; x < GRID_WIDTH; x++) {
+                    Tile *tile = &level[x][y];
+                    animate_tile(tile);
+                    int tile_x = tile->display_x * TILE_SIZE;
+                    int tile_y = tile->display_y * TILE_SIZE + HEADER_HEIGHT;
+                    Vector2 pos = { tile_x, tile_y };
+                    Vector2 immovable_pos = { tile->grid_x * TILE_SIZE, tile->grid_y * TILE_SIZE + HEADER_HEIGHT};
+
+                    // Draw tile contents
+                    if (tile->content & TARGET) {
+                        DrawTextureRec(target, tile_src, immovable_pos, WHITE);
+                    }
+                    if(tile->content & WALL) {
+                        DrawTextureRec(wall, tile_src, immovable_pos, WHITE);
+                    }
+                    if (tile->content & BOX) {
+                        DrawTextureRec(box, tile_src, pos, WHITE);
+                    }
+                    if(tile->content & BOMB) {
+                        DrawTextureRec(bomb, tile_src, pos, WHITE);
+                    }
+                    if (!(tile->content & (BOX | TARGET | WALL | BOMB ))) {
+                        // Draw grid lines
+                        /*DrawRectangleLines(tileX, tileY, TILE_SIZE, TILE_SIZE, DARKGRAY);*/
+
+                    }
                 }
             }
-        }
-        if(IsKeyPressed(KEY_R)) {
-            loadLevel();
-            gameWon = false;
-        }
-        if(IsKeyPressed(KEY_E)) {
-            editor_mode = !editor_mode;
+            animate_player(&player);
+            DrawTextureRec(player_texture, tile_src, (Vector2){player.displayX * TILE_SIZE, player.displayY * TILE_SIZE + HEADER_HEIGHT}, PINK);
+
+            unsigned char selected_tile;
+            if(editor_mode) {
+                Rectangle tile_select = {0, 0, BUTTON_WIDTH, HEADER_HEIGHT};
+
+                // Can we use emojis here?
+                int wtf = GuiToggleGroup(tile_select, "NADA;BOMB;ME;END;BOX;WALL", &active_tile_selector);
+
+                // active_tile_selector is 0, 1, ..., N. But we want the bit mask representation.
+                if(active_tile_selector == 0) {
+                    selected_tile = 0;
+                }
+                else {
+                    selected_tile = (unsigned char) (1 << (active_tile_selector - 1));
+                }
+
+                Rectangle save_button_rect = {SCREEN_WIDTH - BUTTON_WIDTH, 0, BUTTON_WIDTH, HEADER_HEIGHT};
+                GuiButton(save_button_rect, "Save");
+
+                // Level selector / loader
+                if(GuiSpinner((Rectangle){(SCREEN_WIDTH - 100) / 2.0f, 0, 100, HEADER_HEIGHT}, "Level", &spinner_val, 0, 10, spinner_edit_mode)) spinner_edit_mode = !spinner_edit_mode;
+                GuiButton((Rectangle) { SCREEN_WIDTH / 2.0f + 50.0f, 0, BUTTON_WIDTH, HEADER_HEIGHT}, "Load");
+
+                if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                    Vector2 cursor = GetMousePosition();
+                    bool header_is_clicked = cursor.y < HEADER_HEIGHT;
+                    bool save_button_is_clicked = cursor.x > SCREEN_WIDTH - BUTTON_WIDTH && header_is_clicked;
+                    bool load_button_is_clicked = (cursor.x > SCREEN_WIDTH / 2.0f + 50.0f) && (cursor.x < SCREEN_WIDTH / 2.0f + 50.0f + (float) BUTTON_WIDTH) && header_is_clicked;
+                    if(save_button_is_clicked) {
+                        saveLevel();
+                    }
+                    if(load_button_is_clicked) {
+                        level_num = spinner_val;
+                        loadLevel();
+                    }
+                }
+
+                // Draw new tile
+                if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+                    Vector2 cursor = GetMousePosition();
+                    bool header_is_clicked = cursor.y < HEADER_HEIGHT;
+                    if(!header_is_clicked) {
+                        int gridX = cursor.x / TILE_SIZE;
+                        int gridY = (cursor.y - HEADER_HEIGHT) / TILE_SIZE;
+                        if(selected_tile & START) {
+                            // Remove previous starting pos so we only have one
+                            for(int x=0; x<GRID_WIDTH; x++) {
+                                for(int y=0; y<GRID_HEIGHT; y++) {
+                                    level[x][y].content &= ~START;
+                                }
+                            }
+                            player.x = player.displayX = gridX;
+                            player.y = player.displayY = gridY;
+                        }
+                        level[gridX][gridY].content = selected_tile;
+                    }
+               }
+            }
+            else {
+                if (gameWon) {
+                    DrawText("Press Space for next level!", 150, SCREEN_HEIGHT / 2 - 50, 24, YELLOW);
+                    if(IsKeyPressed(KEY_SPACE)) {
+                        level_num++;
+                        gameWon = false;
+                        loadLevel();
+                    }
+                }
+            }
+            if(IsKeyPressed(KEY_R)) {
+                loadLevel();
+                gameWon = false;
+            }
+            if(IsKeyPressed(KEY_E)) {
+                editor_mode = !editor_mode;
+            }
         }
         EndDrawing();
         if(strlen(debug_string) > 0) {
