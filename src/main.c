@@ -139,6 +139,10 @@ int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sokoban Game");
     SetTargetFPS(60);
 
+    InitAudioDevice();
+    Music melody = LoadMusicStream("resources/fetish_all_over.mp3");
+    PlayMusicStream(melody);
+
     Texture2D wall = LoadTexture("resources/wall32.png");
     Texture2D target = LoadTexture("resources/target32.png");
     Texture2D box = LoadTexture("resources/box32.png");
@@ -159,11 +163,13 @@ int main() {
     bool show_intro = true;
     while (!WindowShouldClose()) {
         float delta = GetFrameTime();
+        UpdateMusicStream(melody);
         // Game Logic
         if (!show_intro && !gameWon && !editor_mode) {
             // Input handling
             int dx = 0, dy = 0;
             if(player.is_animating) {
+                // TODO: Maybe reverse animation if the direction pressed is opposite of where we are going?
                 if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) buffered_key = KEY_RIGHT;
                 if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) buffered_key = KEY_LEFT;
                 if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) buffered_key = KEY_UP;
@@ -392,6 +398,8 @@ int main() {
     UnloadTexture(target);
     UnloadTexture(wall);
     UnloadTexture(bomb);
+    UnloadMusicStream(melody);
+    CloseAudioDevice();
     CloseWindow();
     return 0;
 }
