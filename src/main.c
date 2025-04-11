@@ -24,9 +24,8 @@
 #define START       0b0000010
 #define BOMB        0b0000001
 
-#define MAX_TILES   1024
+#define MAX_SNAPSHOTS   1024
 Tile level[GRID_WIDTH][GRID_HEIGHT] = {0};
-Tile tiles[MAX_TILES] = {0};
 
 // Game
 Player player;
@@ -42,6 +41,8 @@ int content_length = 5;
 bool spinner_edit_mode = false;
 int spinner_val = 0; // level number
 
+Tile snapshots[MAX_SNAPSHOTS][GRID_WIDTH][GRID_HEIGHT];
+int num_snapshots = 0;
 
 bool isGameWon() {
     int targets = 0;
@@ -151,6 +152,7 @@ int main() {
     Rectangle tile_src = {0, 0, TILE_SIZE, TILE_SIZE};
 
     loadLevel();
+    memcpy(&snapshots[num_snapshots++], &level, sizeof(level));
 
     char debug_string[128] = "";
     /*for(int x=0; x<GRID_WIDTH; x++) {*/
@@ -181,6 +183,12 @@ int main() {
                 else if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A) || buffered_key == KEY_LEFT) dx = -1;
                 else if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W) || buffered_key == KEY_UP) dy = -1;
                 else if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S) || buffered_key == KEY_DOWN) dy = 1;
+                if(IsKeyPressed(KEY_Z)) {
+                    if(num_snapshots > 0) {
+                        memcpy(&level, &snapshots[--num_snapshots], sizeof(level)); 
+                        player = startPos();
+                    }
+                }
                 buffered_key = 0;
             }
             // Move player
@@ -203,6 +211,7 @@ int main() {
                             if (pushed_content & BOX) {
                                 bool can_push_box = !(pushed_to_content & WALL || pushed_to_content & BOX || pushed_to_content & BOMB); 
                                 if (can_push_box) {
+                                    memcpy(&snapshots[num_snapshots++], &level, sizeof(level));
                                     Tile *from = &level[new_x][new_y];
                                     Tile *to = &level[item_new_x][item_new_y];
                                     from->content &= ~BOX; 
@@ -210,6 +219,8 @@ int main() {
                                     to->display_x = new_x;
                                     to->display_y = new_y;
                                     to->is_animating = true;
+                                    level[player.x][player.y].content &= ~START;
+                                    level[new_x][new_y].content |= START;
                                     player.x = new_x;
                                     player.y = new_y;
                                     player.is_animating = true;
@@ -224,6 +235,7 @@ int main() {
                             // Bomb pushing
                             else if (pushed_content & BOMB) {
                                 if (!(pushed_to_content & BOX || pushed_to_content & BOMB)) {
+                                    memcpy(&snapshots[num_snapshots++], &level, sizeof(level));
                                     Tile *from = &level[new_x][new_y];
                                     Tile *to = &level[item_new_x][item_new_y];
                                     if(pushed_to_content & WALL) {
@@ -237,6 +249,8 @@ int main() {
                                     to->display_x = new_x;
                                     to->display_y = new_y;
                                     to->is_animating = true;
+                                    level[player.x][player.y].content &= ~START;
+                                    level[new_x][new_y].content |= START;
                                     player.x = new_x;
                                     player.y = new_y;
                                     player.is_animating = true;
@@ -245,6 +259,9 @@ int main() {
                             }
 
                             else {
+                                memcpy(&snapshots[num_snapshots++], &level, sizeof(level));
+                                level[player.x][player.y].content &= ~START;
+                                level[new_x][new_y].content |= START;
                                 player.x = new_x;
                                 player.y = new_y;
                                 player.is_animating = true;
