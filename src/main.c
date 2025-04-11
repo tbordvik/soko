@@ -170,16 +170,17 @@ int main() {
             int dx = 0, dy = 0;
             if(player.is_animating) {
                 // TODO: Maybe reverse animation if the direction pressed is opposite of where we are going?
+                // Nah.. think that will be weird when pushing things.
                 if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) buffered_key = KEY_RIGHT;
                 if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) buffered_key = KEY_LEFT;
                 if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) buffered_key = KEY_UP;
                 if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) buffered_key = KEY_DOWN;
             }
             else {
-                if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)|| buffered_key == KEY_RIGHT) dx = 1;
-                else if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A) || buffered_key == KEY_LEFT) dx = -1;
-                else if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W) || buffered_key == KEY_UP) dy = -1;
-                else if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S) || buffered_key == KEY_DOWN) dy = 1;
+                if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)|| buffered_key == KEY_RIGHT) dx = 1;
+                else if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A) || buffered_key == KEY_LEFT) dx = -1;
+                else if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W) || buffered_key == KEY_UP) dy = -1;
+                else if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S) || buffered_key == KEY_DOWN) dy = 1;
                 buffered_key = 0;
             }
             // Move player
