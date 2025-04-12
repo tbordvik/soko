@@ -150,6 +150,15 @@ void show_intro_screen() {
     DrawText(subtitle, subtitle_pos.x, subtitle_pos.y, 24, ORANGE);
 }
 
+void move_player(int new_x, int new_y) {
+        level[player.x][player.y].content &= ~START;
+        level[new_x][new_y].content |= START;
+        player.x = new_x;
+        player.y = new_y;
+        player.is_animating = true;
+        moves = moves + 1;
+}
+
 int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sokoban Game");
     SetTargetFPS(60);
@@ -232,12 +241,7 @@ int main() {
                                     to->display_x = new_x;
                                     to->display_y = new_y;
                                     to->is_animating = true;
-                                    level[player.x][player.y].content &= ~START;
-                                    level[new_x][new_y].content |= START;
-                                    player.x = new_x;
-                                    player.y = new_y;
-                                    player.is_animating = true;
-                                    moves = moves + 1;
+                                    move_player(new_x, new_y);
 
                                     // Check win condition after pushing a box
                                     if (isGameWon()) {
@@ -262,23 +266,13 @@ int main() {
                                     to->display_x = new_x;
                                     to->display_y = new_y;
                                     to->is_animating = true;
-                                    level[player.x][player.y].content &= ~START;
-                                    level[new_x][new_y].content |= START;
-                                    player.x = new_x;
-                                    player.y = new_y;
-                                    player.is_animating = true;
-                                    moves = moves + 1;
+                                    move_player(new_x, new_y);
                                 }
                             }
 
                             else {
                                 add_snapshot();
-                                level[player.x][player.y].content &= ~START;
-                                level[new_x][new_y].content |= START;
-                                player.x = new_x;
-                                player.y = new_y;
-                                player.is_animating = true;
-                                moves = moves + 1;
+                                move_player(new_x, new_y);
                             }
                         }
                     }
