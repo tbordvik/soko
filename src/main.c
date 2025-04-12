@@ -74,6 +74,19 @@ Player startPos() {
     /*assert(false && "Must have a starting position in the level");*/
 }
 
+void reset_snapshots() {
+    num_snapshots = 1;
+    memcpy(&snapshots[0], &level, sizeof(level));
+}
+
+void add_snapshot() {
+    memcpy(&snapshots[num_snapshots++], &level, sizeof(level));
+}
+
+void pop_snapshot() {
+    memcpy(&level, &snapshots[--num_snapshots], sizeof(level)); 
+}
+
 void loadLevel() {
     char filename[32];
     // Not sure if this will work on windows
@@ -98,6 +111,7 @@ void loadLevel() {
     }
     player = startPos();
     moves = 0;
+    reset_snapshots();
 }
 
 void saveLevel() {
@@ -152,7 +166,6 @@ int main() {
     Rectangle tile_src = {0, 0, TILE_SIZE, TILE_SIZE};
 
     loadLevel();
-    memcpy(&snapshots[num_snapshots++], &level, sizeof(level));
 
     char debug_string[128] = "";
     /*for(int x=0; x<GRID_WIDTH; x++) {*/
@@ -185,7 +198,7 @@ int main() {
                 else if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S) || buffered_key == KEY_DOWN) dy = 1;
                 if(IsKeyPressed(KEY_Z)) {
                     if(num_snapshots > 0) {
-                        memcpy(&level, &snapshots[--num_snapshots], sizeof(level)); 
+                        pop_snapshot();
                         player = startPos();
                     }
                 }
@@ -211,7 +224,7 @@ int main() {
                             if (pushed_content & BOX) {
                                 bool can_push_box = !(pushed_to_content & WALL || pushed_to_content & BOX || pushed_to_content & BOMB); 
                                 if (can_push_box) {
-                                    memcpy(&snapshots[num_snapshots++], &level, sizeof(level));
+                                    add_snapshot();
                                     Tile *from = &level[new_x][new_y];
                                     Tile *to = &level[item_new_x][item_new_y];
                                     from->content &= ~BOX; 
@@ -235,7 +248,7 @@ int main() {
                             // Bomb pushing
                             else if (pushed_content & BOMB) {
                                 if (!(pushed_to_content & BOX || pushed_to_content & BOMB)) {
-                                    memcpy(&snapshots[num_snapshots++], &level, sizeof(level));
+                                    add_snapshot();
                                     Tile *from = &level[new_x][new_y];
                                     Tile *to = &level[item_new_x][item_new_y];
                                     if(pushed_to_content & WALL) {
@@ -259,7 +272,7 @@ int main() {
                             }
 
                             else {
-                                memcpy(&snapshots[num_snapshots++], &level, sizeof(level));
+                                add_snapshot();
                                 level[player.x][player.y].content &= ~START;
                                 level[new_x][new_y].content |= START;
                                 player.x = new_x;
