@@ -244,7 +244,6 @@ int main() {
                                     to->is_animating = true;
                                     move_player(new_x, new_y);
 
-                                    // Check win condition after pushing a box
                                     if (isGameWon()) {
                                         gameWon = true;
                                     }
@@ -252,13 +251,29 @@ int main() {
                             }
                             // Bomb pushing
                             else if (pushed_content & BOMB) {
-                                if (!(pushed_to_content & BOX || pushed_to_content & BOMB)) {
+                                if (!(pushed_to_content & BOX)) {
                                     add_snapshot();
                                     Tile *from = &level[new_x][new_y];
                                     Tile *to = &level[item_new_x][item_new_y];
                                     if(pushed_to_content & WALL) {
                                         // KABOOM!
                                         to->content = 0;
+                                    }
+                                    else if(pushed_to_content & BOMB) {
+                                        // SuperKABOOM!
+                                        if(item_new_x < GRID_WIDTH) {
+                                            level[item_new_x + 1][item_new_y].content &= ~WALL;
+                                        }
+                                        if(item_new_x > 0) {
+                                            level[item_new_x - 1][item_new_y].content &= ~WALL;
+                                        }
+                                        if(item_new_y > 0) {
+                                            level[item_new_x][item_new_y - 1].content &= ~WALL;
+                                        }
+                                        if(item_new_y < GRID_HEIGHT) {
+                                            level[item_new_x][item_new_y + 1].content &= ~WALL;
+                                        }
+                                        to->content &= ~BOMB;
                                     }
                                     else {
                                         to->content |= BOMB;
@@ -417,11 +432,16 @@ int main() {
             }
             else {
                 if (gameWon) {
-                    DrawText("Press Space for next level!", 150, SCREEN_HEIGHT / 2 - 50, 24, YELLOW);
-                    if(IsKeyPressed(KEY_SPACE)) {
-                        level_num++;
-                        gameWon = false;
-                        loadLevel();
+                    if(level_num == 6) {
+                        DrawText("You beat da game! GG!", 150, SCREEN_HEIGHT / 2 - 50, 32, YELLOW);
+                    }
+                    else {
+                        DrawText("Press Space for next level!", 150, SCREEN_HEIGHT / 2 - 50, 24, YELLOW);
+                        if(IsKeyPressed(KEY_SPACE)) {
+                            level_num++;
+                            gameWon = false;
+                            loadLevel();
+                        }
                     }
                 }
             }
