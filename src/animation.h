@@ -1,5 +1,5 @@
 #include <stddef.h>
-#include "raylib.h"
+#include <stdbool.h>
 
 typedef struct {
     // Maybe 2-3 stored keystrokes is sufficient to store.. and if the user 
@@ -23,8 +23,8 @@ typedef struct {
 typedef struct {
     int x;
     int y;
-    float displayX;
-    float displayY;
+    float display_x;
+    float display_y;
     bool is_animating;
 } Player;
 

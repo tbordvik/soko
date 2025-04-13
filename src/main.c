@@ -29,7 +29,7 @@ Tile level[GRID_WIDTH][GRID_HEIGHT] = {0};
 
 // Game
 Player player;
-bool gameWon = false;
+bool game_won = false;
 int level_num = 0;
 int moves = 0;
 int buffered_key;
@@ -45,23 +45,23 @@ bool is_restartable_and_loadable = true;
 Tile snapshots[MAX_SNAPSHOTS][GRID_WIDTH][GRID_HEIGHT];
 int num_snapshots = 0;
 
-bool isGameWon() {
+bool is_game_won() {
     int targets = 0;
-    int boxesOnTargets = 0;
+    int boxes_on_target = 0;
     for (int x = 0; x < GRID_HEIGHT; x++) {
         for (int y = 0; y < GRID_WIDTH; y++) {
             if (level[x][y].content & TARGET) {
                 targets++;
                 if (level[x][y].content & BOX) {
-                    boxesOnTargets++;
+                    boxes_on_target++;
                 }
             }
         }
     }
-    return targets > 0 && targets == boxesOnTargets;
+    return targets > 0 && targets == boxes_on_target;
 }
 
-Player startPos() {
+Player start_pos() {
     for(int x=0; x<GRID_WIDTH; x++) {
         for(int y=0; y<GRID_HEIGHT; y++) {
             if(level[x][y].content & START) {
@@ -88,7 +88,7 @@ void pop_snapshot() {
     memcpy(&level, &snapshots[--num_snapshots], sizeof(level)); 
 }
 
-void loadLevel() {
+void load_level() {
     char filename[32];
     // Not sure if this will work on windows
     sprintf(filename, "resources/levels/level%d", level_num); 
@@ -110,12 +110,12 @@ void loadLevel() {
         int y = i % GRID_HEIGHT;
         level[x][y] = (Tile) { lvl_bytes[i], x, y, x, y, false };
     }
-    player = startPos();
+    player = start_pos();
     moves = 0;
     reset_snapshots();
 }
 
-void saveLevel() {
+void save_level() {
     unsigned char bytes_to_save[GRID_WIDTH][GRID_HEIGHT];
     for(int x=0; x<GRID_WIDTH; x++) {
         for(int y=0; y<GRID_HEIGHT; y++) {
@@ -175,7 +175,7 @@ int main() {
     Texture2D bomb = LoadTexture("resources/tnt32.png");
     Rectangle tile_src = {0, 0, TILE_SIZE, TILE_SIZE};
 
-    loadLevel();
+    load_level();
 
     char debug_string[128] = "";
     /*for(int x=0; x<GRID_WIDTH; x++) {*/
@@ -190,7 +190,7 @@ int main() {
         float delta = GetFrameTime();
         UpdateMusicStream(melody);
         // Game Logic
-        if (!show_intro && !gameWon && !editor_mode) {
+        if (!show_intro && !game_won && !editor_mode) {
             // Input handling
             int dx = 0, dy = 0;
             if(player.is_animating) {
@@ -209,7 +209,7 @@ int main() {
                 if(IsKeyPressed(KEY_Z)) {
                     if(num_snapshots > 0) {
                         pop_snapshot();
-                        player = startPos();
+                        player = start_pos();
                     }
                 }
                 buffered_key = 0;
@@ -243,10 +243,7 @@ int main() {
                                     to->display_y = new_y;
                                     to->is_animating = true;
                                     move_player(new_x, new_y);
-
-                                    if (isGameWon()) {
-                                        gameWon = true;
-                                    }
+                                    game_won = is_game_won();
                                 }
                             }
                             // Bomb pushing
@@ -352,7 +349,7 @@ int main() {
                 }
             }
             animate_player(&player);
-            DrawTextureRec(player_texture, tile_src, (Vector2){player.displayX * TILE_SIZE, player.displayY * TILE_SIZE + HEADER_HEIGHT}, PINK);
+            DrawTextureRec(player_texture, tile_src, (Vector2){player.display_x * TILE_SIZE, player.display_y * TILE_SIZE + HEADER_HEIGHT}, PINK);
 
             unsigned char selected_tile;
             if(editor_mode) {
@@ -401,11 +398,11 @@ int main() {
                     bool save_button_is_clicked = cursor.x > SCREEN_WIDTH - BUTTON_WIDTH && header_is_clicked;
                     bool load_button_is_clicked = (cursor.x > SCREEN_WIDTH / 2.0f + 50.0f) && (cursor.x < SCREEN_WIDTH / 2.0f + 50.0f + (float) BUTTON_WIDTH) && header_is_clicked;
                     if(save_button_is_clicked) {
-                        saveLevel();
+                        save_level();
                     }
                     if(load_button_is_clicked && is_restartable_and_loadable) {
                         level_num = spinner_val;
-                        loadLevel();
+                        load_level();
                     }
                 }
 
@@ -423,15 +420,15 @@ int main() {
                                     level[x][y].content &= ~START;
                                 }
                             }
-                            player.x = player.displayX = gridX;
-                            player.y = player.displayY = gridY;
+                            player.x = player.display_x = gridX;
+                            player.y = player.display_y = gridY;
                         }
                         level[gridX][gridY].content = selected_tile;
                     }
                }
             }
             else {
-                if (gameWon) {
+                if (game_won) {
                     if(level_num == 6) {
                         DrawText("You beat da game! GG!", 150, SCREEN_HEIGHT / 2 - 50, 32, YELLOW);
                     }
@@ -439,15 +436,15 @@ int main() {
                         DrawText("Press Space for next level!", 150, SCREEN_HEIGHT / 2 - 50, 24, YELLOW);
                         if(IsKeyPressed(KEY_SPACE)) {
                             level_num++;
-                            gameWon = false;
-                            loadLevel();
+                            game_won = false;
+                            load_level();
                         }
                     }
                 }
             }
             if(IsKeyPressed(KEY_R) && is_restartable_and_loadable) {
-                loadLevel();
-                gameWon = false;
+                load_level();
+                game_won = false;
             }
             if(IsKeyPressed(KEY_E)) {
                 editor_mode = !editor_mode;
