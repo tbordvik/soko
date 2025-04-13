@@ -40,6 +40,7 @@ int active_tile_selector = 0;
 int content_length = 5;
 bool spinner_edit_mode = false;
 int spinner_val = 0; // level number
+bool is_restartable_and_loadable = true;
 
 Tile snapshots[MAX_SNAPSHOTS][GRID_WIDTH][GRID_HEIGHT];
 int num_snapshots = 0;
@@ -344,7 +345,24 @@ int main() {
 
                 // Can we use emojis here?
                 int wtf = GuiToggleGroup(tile_select, "NADA;BOMB;ME;END;BOX;WALL", &active_tile_selector);
-
+                if(IsKeyPressed(KEY_ONE)) {
+                    active_tile_selector = 0;
+                }
+                if(IsKeyPressed(KEY_TWO)) {
+                    active_tile_selector = 1;
+                }
+                if(IsKeyPressed(KEY_THREE)) {
+                    active_tile_selector = 2;
+                }
+                if(IsKeyPressed(KEY_FOUR)) {
+                    active_tile_selector = 3;
+                }
+                if(IsKeyPressed(KEY_FIVE)) {
+                    active_tile_selector = 4;
+                }
+                if(IsKeyPressed(KEY_SIX)) {
+                    active_tile_selector = 5;
+                }
                 // active_tile_selector is 0, 1, ..., N. But we want the bit mask representation.
                 if(active_tile_selector == 0) {
                     selected_tile = 0;
@@ -355,6 +373,8 @@ int main() {
 
                 Rectangle save_button_rect = {SCREEN_WIDTH - BUTTON_WIDTH, 0, BUTTON_WIDTH, HEADER_HEIGHT};
                 GuiButton(save_button_rect, "Save");
+                Rectangle checkbox_rect = { (float) SCREEN_WIDTH * 2 / 3, 0, BUTTON_WIDTH, HEADER_HEIGHT};
+                GuiCheckBox(checkbox_rect, "Enable RS/Load", &is_restartable_and_loadable);
 
                 // Level selector / loader
                 if(GuiSpinner((Rectangle){(SCREEN_WIDTH - 100) / 2.0f, 0, 100, HEADER_HEIGHT}, "Level", &spinner_val, 0, 10, spinner_edit_mode)) spinner_edit_mode = !spinner_edit_mode;
@@ -368,7 +388,7 @@ int main() {
                     if(save_button_is_clicked) {
                         saveLevel();
                     }
-                    if(load_button_is_clicked) {
+                    if(load_button_is_clicked && is_restartable_and_loadable) {
                         level_num = spinner_val;
                         loadLevel();
                     }
@@ -405,7 +425,7 @@ int main() {
                     }
                 }
             }
-            if(IsKeyPressed(KEY_R)) {
+            if(IsKeyPressed(KEY_R) && is_restartable_and_loadable) {
                 loadLevel();
                 gameWon = false;
             }
