@@ -33,6 +33,7 @@ bool game_won = false;
 int level_num = 0;
 int moves = 0;
 int buffered_key;
+bool is_music_playing = true;
 
 // Editor
 bool editor_mode = false;
@@ -469,6 +470,15 @@ int main() {
             }
             if(IsKeyPressed(KEY_E)) {
                 editor_mode = !editor_mode;
+            }
+            if(IsKeyPressed(KEY_M)) {
+                is_music_playing = !is_music_playing;
+                if(is_music_playing) {
+                    PlayMusicStream(melody);
+                }
+                else {
+                    StopMusicStream(melody);
+                }
             }
         }
         EndDrawing();
