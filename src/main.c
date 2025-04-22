@@ -17,7 +17,7 @@
 #define SCREEN_HEIGHT (TILE_SIZE * GRID_HEIGHT + HEADER_HEIGHT)
 
 // Bit masks for square content
-#define PLAYER      0b0100000
+#define FLAMES      0b0100000
 #define WALL        0b0010000
 #define BOX         0b0001000
 #define TARGET      0b0000100
@@ -95,7 +95,7 @@ void load_level() {
     if(!FileExists(filename)) {
         for(int x=0; x<GRID_WIDTH; x++) {
             for(int y=0; y<GRID_HEIGHT; y++) {
-                level[x][y] = (Tile) { 0, x, y, x, y, false };
+                level[x][y] = (Tile) { 0, x, y, x, y, false, 0 };
             }
         }
         return;
@@ -108,7 +108,7 @@ void load_level() {
     for(int i=0; i<size; i++) {
         int x = i / GRID_WIDTH;
         int y = i % GRID_HEIGHT;
-        level[x][y] = (Tile) { lvl_bytes[i], x, y, x, y, false };
+        level[x][y] = (Tile) { lvl_bytes[i], x, y, x, y, false, 0 };
     }
     player = start_pos();
     moves = 0;
@@ -174,6 +174,14 @@ int main() {
     Texture2D player_texture = LoadTexture("resources/player32.png");
     Texture2D bomb = LoadTexture("resources/tnt32.png");
     Rectangle tile_src = {0, 0, TILE_SIZE, TILE_SIZE};
+
+    Texture2D flames = LoadTexture("resources/firesheet_32.png");
+    Rectangle flames_rect[5*5];
+    for(int y=0; y<5; y++) {
+        for(int x=0; x<5; x++) {
+            flames_rect[y * 5 + x] = (Rectangle) { x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE }; 
+        }
+    }
 
     load_level();
 
@@ -255,20 +263,25 @@ int main() {
                                     if(pushed_to_content & WALL) {
                                         // KABOOM!
                                         to->content = 0;
+                                        to->content |= FLAMES;
                                     }
                                     else if(pushed_to_content & BOMB) {
                                         // SuperKABOOM!
                                         if(item_new_x < GRID_WIDTH) {
                                             level[item_new_x + 1][item_new_y].content &= ~WALL;
+                                            level[item_new_x + 1][item_new_y].content |= FLAMES;
                                         }
                                         if(item_new_x > 0) {
                                             level[item_new_x - 1][item_new_y].content &= ~WALL;
+                                            level[item_new_x - 1][item_new_y].content |= FLAMES;
                                         }
                                         if(item_new_y > 0) {
                                             level[item_new_x][item_new_y - 1].content &= ~WALL;
+                                            level[item_new_x][item_new_y - 1].content |= FLAMES;
                                         }
                                         if(item_new_y < GRID_HEIGHT) {
                                             level[item_new_x][item_new_y + 1].content &= ~WALL;
+                                            level[item_new_x][item_new_y + 1].content |= FLAMES;
                                         }
                                         to->content &= ~BOMB;
                                     }
@@ -340,6 +353,14 @@ int main() {
                     }
                     if(tile->content & BOMB) {
                         DrawTextureRec(bomb, tile_src, pos, WHITE);
+                    }
+                    if(tile->content & FLAMES) {
+                        if(tile->animation_frame < sizeof(flames_rect) / sizeof(flames_rect[0]) ) {
+                            DrawTextureRec(flames, flames_rect[tile->animation_frame++], immovable_pos, WHITE);
+                        }
+                        else {
+                            tile->content &= ~FLAMES;
+                        }
                     }
                     if (!(tile->content & (BOX | TARGET | WALL | BOMB ))) {
                         // Draw grid lines

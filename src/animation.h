@@ -2,22 +2,13 @@
 #include <stdbool.h>
 
 typedef struct {
-    // Maybe 2-3 stored keystrokes is sufficient to store.. and if the user 
-    // inputs more we overwrite the last one? So
-    //
-    // Hmm, try just storing one first and see how that goes? don't need a stack
-    // for that tho..
-    char key[32]; 
-    int top;
-} Stack;
-
-typedef struct {
     unsigned char content;
     int grid_x;
     int grid_y;
     float display_x;
     float display_y;
     bool is_animating;
+    int animation_frame;
 } Tile;
 
 typedef struct {
