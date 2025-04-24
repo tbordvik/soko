@@ -12,10 +12,10 @@ typedef struct {
 } Tile;
 
 typedef struct {
-    int x;
-    int y;
-    float display_x;
-    float display_y;
+    int grid_x, grid_y;
+    float display_x, display_y;
+    float start_x, start_y;
+    float anim_timer;
     bool is_animating;
 } Player;
 

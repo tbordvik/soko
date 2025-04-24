@@ -153,12 +153,19 @@ void show_intro_screen() {
 }
 
 void move_player(int new_x, int new_y) {
-        level[player.x][player.y].content &= ~START;
-        level[new_x][new_y].content |= START;
-        player.x = new_x;
-        player.y = new_y;
-        player.is_animating = true;
-        moves = moves + 1;
+        if(!player.is_animating) {
+            level[player.grid_x][player.grid_y].content &= ~START;
+            level[new_x][new_y].content |= START;
+            player.start_x = player.display_x;
+            player.start_y = player.display_y;
+            player.grid_x = new_x;
+            player.grid_y = new_y;
+            player.display_x = player.start_x;
+            player.display_y = player.start_y;
+            player.anim_timer = 0.0f;
+            player.is_animating = true;
+            moves = moves + 1;
+        }
 }
 
 int main() {
@@ -224,8 +231,8 @@ int main() {
                 buffered_key = 0;
             }
             // Move player
-            int new_x = player.x + dx;
-            int new_y = player.y + dy;
+            int new_x = player.grid_x + dx;
+            int new_y = player.grid_y + dy;
             if(dx != 0 || dy != 0) {
 
                 if (new_x >= 0 && new_y < GRID_WIDTH && new_y >= 0 && new_y < GRID_HEIGHT) {
@@ -442,8 +449,8 @@ int main() {
                                     level[x][y].content &= ~START;
                                 }
                             }
-                            player.x = player.display_x = gridX;
-                            player.y = player.display_y = gridY;
+                            player.grid_x = player.display_x = gridX;
+                            player.grid_y = player.display_y = gridY;
                         }
                         level[gridX][gridY].content = selected_tile;
                     }
