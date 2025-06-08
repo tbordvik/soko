@@ -1,4 +1,5 @@
 #include "animation.h"
+#include <stdio.h>
 #include "raylib.h"
 
 #define ANIM_TIME 0.165f // In seconds.
@@ -49,34 +50,32 @@ void animate_player(Player *player) {
 void animate_tile(Tile *tile) {
   float delta = GetFrameTime();
   if (tile->is_animating) {
-    float dist = delta / ANIM_TIME;
-    // Must be a better way to do this lol..
-    // but to tired right now to simplify.
-    if (tile->grid_x > tile->display_x) {
-      tile->display_x += dist;
-      if (tile->display_x >= tile->grid_x) {
-        tile->display_x = tile->grid_x;
-        tile->is_animating = false;
-      }
-    } else if (tile->grid_x < tile->display_x) {
-      tile->display_x -= dist;
-      if (tile->display_x <= tile->grid_x) {
-        tile->display_x = tile->grid_x;
-        tile->is_animating = false;
-      }
+    tile->anim_timer += delta;
+    float t = tile->anim_timer / ANIM_TIME;
+    if(t >= 1.0f) {
+      t = 1.0f;
+      tile->is_animating = false;
     }
-    if (tile->grid_y > tile->display_y) {
-      tile->display_y += dist;
-      if (tile->display_y >= tile->grid_y) {
-        tile->display_y = tile->grid_y;
-        tile->is_animating = false;
-      }
-    } else if (tile->grid_y < tile->display_y) {
-      tile->display_y -= dist;
-      if (tile->display_y <= tile->grid_y) {
-        tile->display_y = tile->grid_y;
-        tile->is_animating = false;
-      }
+    char debug_str[128];
+    sprintf(debug_str, "Tile animating - (x: %f, y: %f)", tile->display_x, tile->display_y);
+    TraceLog(LOG_WARNING, debug_str); 
+    // float bezier_factor_x = 0.01;
+    // float bezier_factor_y = 0.01f;
+    // float cx0 = tile->start_x + bezier_factor_x;
+    // float cx1 = tile->grid_x - bezier_factor_x;
+    // float cy0 = tile->start_y + bezier_factor_y;
+    // float cy1 = tile->grid_y - bezier_factor_y;
+    // tile->display_x = cubic_bezier(t, tile->start_x, tile->grid_x, cx0, cx1);
+    // tile->display_y = cubic_bezier(t, tile->start_y, tile->grid_y, cy0, cy1);
+
+    float st = smoothstep(t);
+    tile->display_x = tile->start_x + (tile->grid_x - tile->start_x) * st;
+    tile->display_y = tile->start_y + (tile->grid_y - tile->start_y) * st;
+
+    if(!tile->is_animating) {
+      tile->display_x = tile->grid_x;
+      tile->display_y = tile->grid_y;
+      tile->anim_timer = 0.0f;
     }
   }
 }

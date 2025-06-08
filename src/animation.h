@@ -7,6 +7,8 @@ typedef struct {
     int grid_y;
     float display_x;
     float display_y;
+    float start_x, start_y;
+    float anim_timer;
     bool is_animating;
     int animation_frame;
 } Tile;

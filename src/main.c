@@ -66,12 +66,12 @@ Player start_pos() {
     for(int x=0; x<GRID_WIDTH; x++) {
         for(int y=0; y<GRID_HEIGHT; y++) {
             if(level[x][y].content & START) {
-                Player p = { x, y, x, y, false};
+                Player p = { x, y, x, y, x, y, 0.0f, false};
                 return p;
             }
         }
     }
-    Player p = { 0, 0, 0, 0, false };
+    Player p = { 0, 0, 0, 0, 0, 0, 0.0f, false };
     return p;
     /*assert(false && "Must have a starting position in the level");*/
 }
@@ -96,7 +96,7 @@ void load_level() {
     if(!FileExists(filename)) {
         for(int x=0; x<GRID_WIDTH; x++) {
             for(int y=0; y<GRID_HEIGHT; y++) {
-                level[x][y] = (Tile) { 0, x, y, x, y, false, 0 };
+                level[x][y] = (Tile) { 0, x, y, x, y, x, y, 0, false, 0 };
             }
         }
         return;
@@ -109,7 +109,7 @@ void load_level() {
     for(int i=0; i<size; i++) {
         int x = i / GRID_WIDTH;
         int y = i % GRID_HEIGHT;
-        level[x][y] = (Tile) { lvl_bytes[i], x, y, x, y, false, 0 };
+        level[x][y] = (Tile) { lvl_bytes[i], x, y, x, y, x, y, 0, false, 0 };
     }
     player = start_pos();
     moves = 0;
@@ -255,8 +255,11 @@ int main() {
                                     Tile *to = &level[item_new_x][item_new_y];
                                     from->content &= ~BOX; 
                                     to->content |= BOX;
-                                    to->display_x = new_x;
-                                    to->display_y = new_y;
+                                    to->start_x = from->display_x;
+                                    to->start_y = from->display_y;
+                                    to->display_x = to->start_x;
+                                    to->display_y = to->start_y;
+                                    to->anim_timer = 0.0f;
                                     to->is_animating = true;
                                     move_player(new_x, new_y);
                                     game_won = is_game_won();
@@ -297,6 +300,8 @@ int main() {
                                         to->content |= BOMB;
                                     }
                                     from->content &= ~BOMB;
+                                    to->start_x = to->display_x;
+                                    to->start_y = to->display_y;
                                     to->display_x = new_x;
                                     to->display_y = new_y;
                                     to->is_animating = true;
