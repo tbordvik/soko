@@ -7,11 +7,11 @@
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
-#define TILE_SIZE 32
-#define GRID_WIDTH 20
-#define GRID_HEIGHT 20
+#define TILE_SIZE     32
+#define GRID_WIDTH    20
+#define GRID_HEIGHT   20
 #define HEADER_HEIGHT 30 // Space at the top for game info / editor
-#define BUTTON_WIDTH 35
+#define BUTTON_WIDTH  35
 // TODO: Find a better way to set the screen size.
 #define SCREEN_WIDTH (TILE_SIZE * GRID_WIDTH)
 #define SCREEN_HEIGHT (TILE_SIZE * GRID_HEIGHT + HEADER_HEIGHT)
@@ -49,8 +49,8 @@ int num_snapshots = 0;
 bool is_game_won() {
     int targets = 0;
     int boxes_on_target = 0;
-    for (int x = 0; x < GRID_HEIGHT; x++) {
-        for (int y = 0; y < GRID_WIDTH; y++) {
+    for (int y = 0; y < GRID_HEIGHT; y++) {
+        for (int x = 0; x < GRID_WIDTH; x++) {
             if (level[x][y].content & TARGET) {
                 targets++;
                 if (level[x][y].content & BOX) {
@@ -63,9 +63,9 @@ bool is_game_won() {
 }
 
 Player start_pos() {
-    for(int x=0; x<GRID_WIDTH; x++) {
-        for(int y=0; y<GRID_HEIGHT; y++) {
-            if(level[x][y].content & START) {
+    for (int y = 0; y < GRID_HEIGHT; y++) {
+        for (int x = 0; x < GRID_WIDTH; x++) {
+            if (level[x][y].content & START) {
                 Player p = { x, y, x, y, x, y, 0.0f, false};
                 return p;
             }
@@ -93,9 +93,9 @@ void load_level() {
     char filename[32];
     // Not sure if this will work on windows
     sprintf(filename, "resources/levels/level%d", level_num); 
-    if(!FileExists(filename)) {
-        for(int x=0; x<GRID_WIDTH; x++) {
-            for(int y=0; y<GRID_HEIGHT; y++) {
+    if (!FileExists(filename)) {
+        for (int y = 0; y < GRID_HEIGHT; y++) {
+            for (int x = 0; x < GRID_WIDTH; x++) {
                 level[x][y] = (Tile) { 0, x, y, x, y, x, y, 0, false, 0 };
             }
         }
@@ -106,7 +106,7 @@ void load_level() {
     lvl_bytes = LoadFileData(filename, &size);
 
     // File data is stored in order (0, 0), (0, 1), ..., (1, 0), (1, 1) ...
-    for(int i=0; i<size; i++) {
+    for (int i = 0; i < size; i++) {
         int x = i / GRID_WIDTH;
         int y = i % GRID_HEIGHT;
         level[x][y] = (Tile) { lvl_bytes[i], x, y, x, y, x, y, 0, false, 0 };
@@ -118,8 +118,8 @@ void load_level() {
 
 void save_level() {
     unsigned char bytes_to_save[GRID_WIDTH][GRID_HEIGHT];
-    for(int x=0; x<GRID_WIDTH; x++) {
-        for(int y=0; y<GRID_HEIGHT; y++) {
+    for (int y = 0; y < GRID_HEIGHT; y++) {
+        for (int x = 0; x < GRID_WIDTH; x++) {
             bytes_to_save[x][y] = level[x][y].content;
         }
     }
@@ -139,11 +139,11 @@ void show_intro_screen() {
     bool show_subtitle = false;
 
     title_pos.x = title_pos.x + delta * 500 / animation_time; 
-    if(title_pos.x > 200) {
+    if (title_pos.x > 200) {
         title_pos.x = 200;
         subtitle_pos.y = subtitle_pos.y - delta * 280 / animation_time;
         show_subtitle = true;
-        if(subtitle_pos.y < 400) {
+        if (subtitle_pos.y < 400) {
             subtitle_pos.y = 400;
         }
     }
@@ -153,7 +153,7 @@ void show_intro_screen() {
 }
 
 void move_player(int new_x, int new_y) {
-        if(!player.is_animating) {
+        if (!player.is_animating) {
             level[player.grid_x][player.grid_y].content &= ~START;
             level[new_x][new_y].content |= START;
             player.start_x = player.display_x;
@@ -168,7 +168,7 @@ void move_player(int new_x, int new_y) {
         }
 }
 
-int main() {
+int main(void) {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sokoban Game");
     SetTargetFPS(60);
 
@@ -185,8 +185,8 @@ int main() {
 
     Texture2D flames = LoadTexture("resources/firesheet_32.png");
     Rectangle flames_rect[5*5];
-    for(int y=0; y<5; y++) {
-        for(int x=0; x<5; x++) {
+    for (int y = 0; y < 5; y++) {
+        for (int x = 0; x < 5; x++) {
             flames_rect[y * 5 + x] = (Rectangle) { x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE }; 
         }
     }
@@ -209,7 +209,7 @@ int main() {
         if (!show_intro && !game_won && !editor_mode) {
             // Input handling
             int dx = 0, dy = 0;
-            if(player.is_animating) {
+            if (player.is_animating) {
                 // TODO: Maybe reverse animation if the direction pressed is opposite of where we are going?
                 // Nah.. think that will be weird when pushing things.
                 if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) buffered_key = KEY_RIGHT;
@@ -222,8 +222,8 @@ int main() {
                 else if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A) || buffered_key == KEY_LEFT) dx = -1;
                 else if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W) || buffered_key == KEY_UP) dy = -1;
                 else if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S) || buffered_key == KEY_DOWN) dy = 1;
-                if(IsKeyPressed(KEY_Z)) {
-                    if(num_snapshots > 0) {
+                if (IsKeyPressed(KEY_Z)) {
+                    if (num_snapshots > 0) {
                         pop_snapshot();
                         player = start_pos();
                     }
@@ -233,7 +233,7 @@ int main() {
             // Move player
             int new_x = player.grid_x + dx;
             int new_y = player.grid_y + dy;
-            if(dx != 0 || dy != 0) {
+            if (dx != 0 || dy != 0) {
 
                 if (new_x >= 0 && new_y < GRID_WIDTH && new_y >= 0 && new_y < GRID_HEIGHT) {
                     unsigned char pushed_content = level[new_x][new_y].content;
@@ -271,26 +271,26 @@ int main() {
                                     add_snapshot();
                                     Tile *from = &level[new_x][new_y];
                                     Tile *to = &level[item_new_x][item_new_y];
-                                    if(pushed_to_content & WALL) {
+                                    if (pushed_to_content & WALL) {
                                         // KABOOM!
                                         to->content = 0;
                                         to->content |= FLAMES;
                                     }
-                                    else if(pushed_to_content & BOMB) {
+                                    else if (pushed_to_content & BOMB) {
                                         // SuperKABOOM!
-                                        if(item_new_x < GRID_WIDTH) {
+                                        if (item_new_x < GRID_WIDTH) {
                                             level[item_new_x + 1][item_new_y].content &= ~WALL;
                                             level[item_new_x + 1][item_new_y].content |= FLAMES;
                                         }
-                                        if(item_new_x > 0) {
+                                        if (item_new_x > 0) {
                                             level[item_new_x - 1][item_new_y].content &= ~WALL;
                                             level[item_new_x - 1][item_new_y].content |= FLAMES;
                                         }
-                                        if(item_new_y > 0) {
+                                        if (item_new_y > 0) {
                                             level[item_new_x][item_new_y - 1].content &= ~WALL;
                                             level[item_new_x][item_new_y - 1].content |= FLAMES;
                                         }
-                                        if(item_new_y < GRID_HEIGHT) {
+                                        if (item_new_y < GRID_HEIGHT) {
                                             level[item_new_x][item_new_y + 1].content &= ~WALL;
                                             level[item_new_x][item_new_y + 1].content |= FLAMES;
                                         }
@@ -322,16 +322,16 @@ int main() {
         BeginDrawing();
         ClearBackground(BLACK);
 
-        if(show_intro) {
+        if (show_intro) {
             show_intro_screen();
-            if(IsKeyPressed(KEY_SPACE)) {
+            if (IsKeyPressed(KEY_SPACE)) {
                 show_intro = false;
             }
         }
         else {
             // Draw header stuff
             DrawRectangle(0, 0, SCREEN_WIDTH, HEADER_HEIGHT, DARKGRAY);
-            if(!editor_mode) {
+            if (!editor_mode) {
                 char scoreText[32];
                 sprintf(scoreText, "Moves: %d", moves);
                 DrawText(scoreText, 10, 8, 20, WHITE);
@@ -358,16 +358,16 @@ int main() {
                     if (tile->content & TARGET) {
                         DrawTextureRec(target, tile_src, immovable_pos, WHITE);
                     }
-                    if(tile->content & WALL) {
+                    if (tile->content & WALL) {
                         DrawTextureRec(wall, tile_src, immovable_pos, WHITE);
                     }
                     if (tile->content & BOX) {
                         DrawTextureRec(box, tile_src, pos, WHITE);
                     }
-                    if(tile->content & BOMB) {
+                    if (tile->content & BOMB) {
                         DrawTextureRec(bomb, tile_src, pos, WHITE);
                     }
-                    if(tile->content & FLAMES) {
+                    if (tile->content & FLAMES) {
                         if(tile->animation_frame < sizeof(flames_rect) / sizeof(flames_rect[0]) ) {
                             DrawTextureRec(flames, flames_rect[tile->animation_frame++], immovable_pos, WHITE);
                         }
@@ -386,31 +386,31 @@ int main() {
             DrawTextureRec(player_texture, tile_src, (Vector2){player.display_x * TILE_SIZE, player.display_y * TILE_SIZE + HEADER_HEIGHT}, PINK);
 
             unsigned char selected_tile;
-            if(editor_mode) {
+            if (editor_mode) {
                 Rectangle tile_select = {0, 0, BUTTON_WIDTH, HEADER_HEIGHT};
 
                 // Can we use emojis here?
                 int wtf = GuiToggleGroup(tile_select, "NADA;BOMB;ME;END;BOX;WALL", &active_tile_selector);
-                if(IsKeyPressed(KEY_ONE)) {
+                if (IsKeyPressed(KEY_ONE)) {
                     active_tile_selector = 0;
                 }
-                if(IsKeyPressed(KEY_TWO)) {
+                if (IsKeyPressed(KEY_TWO)) {
                     active_tile_selector = 1;
                 }
-                if(IsKeyPressed(KEY_THREE)) {
+                if (IsKeyPressed(KEY_THREE)) {
                     active_tile_selector = 2;
                 }
-                if(IsKeyPressed(KEY_FOUR)) {
+                if (IsKeyPressed(KEY_FOUR)) {
                     active_tile_selector = 3;
                 }
-                if(IsKeyPressed(KEY_FIVE)) {
+                if (IsKeyPressed(KEY_FIVE)) {
                     active_tile_selector = 4;
                 }
-                if(IsKeyPressed(KEY_SIX)) {
+                if (IsKeyPressed(KEY_SIX)) {
                     active_tile_selector = 5;
                 }
                 // active_tile_selector is 0, 1, ..., N. But we want the bit mask representation.
-                if(active_tile_selector == 0) {
+                if (active_tile_selector == 0) {
                     selected_tile = 0;
                 }
                 else {
@@ -423,10 +423,10 @@ int main() {
                 GuiCheckBox(checkbox_rect, "Enable RS/Load", &is_restartable_and_loadable);
 
                 // Level selector / loader
-                if(GuiSpinner((Rectangle){(SCREEN_WIDTH - 100) / 2.0f, 0, 100, HEADER_HEIGHT}, "Level", &spinner_val, 0, 10, spinner_edit_mode)) spinner_edit_mode = !spinner_edit_mode;
+                if (GuiSpinner((Rectangle){(SCREEN_WIDTH - 100) / 2.0f, 0, 100, HEADER_HEIGHT}, "Level", &spinner_val, 0, 10, spinner_edit_mode)) spinner_edit_mode = !spinner_edit_mode;
                 GuiButton((Rectangle) { SCREEN_WIDTH / 2.0f + 50.0f, 0, BUTTON_WIDTH, HEADER_HEIGHT}, "Load");
 
-                if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                     Vector2 cursor = GetMousePosition();
                     bool header_is_clicked = cursor.y < HEADER_HEIGHT;
                     bool save_button_is_clicked = cursor.x > SCREEN_WIDTH - BUTTON_WIDTH && header_is_clicked;
@@ -441,16 +441,16 @@ int main() {
                 }
 
                 // Draw new tile
-                if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+                if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
                     Vector2 cursor = GetMousePosition();
                     bool header_is_clicked = cursor.y < HEADER_HEIGHT;
-                    if(!header_is_clicked) {
+                    if (!header_is_clicked) {
                         int gridX = cursor.x / TILE_SIZE;
                         int gridY = (cursor.y - HEADER_HEIGHT) / TILE_SIZE;
-                        if(selected_tile & START) {
+                        if (selected_tile & START) {
                             // Remove previous starting pos so we only have one
-                            for(int x=0; x<GRID_WIDTH; x++) {
-                                for(int y=0; y<GRID_HEIGHT; y++) {
+                            for (int x=0; x<GRID_WIDTH; x++) {
+                                for (int y=0; y<GRID_HEIGHT; y++) {
                                     level[x][y].content &= ~START;
                                 }
                             }
@@ -463,12 +463,12 @@ int main() {
             }
             else {
                 if (game_won) {
-                    if(level_num == 6) {
+                    if (level_num == 6) {
                         DrawText("You beat da game! GG!", 150, SCREEN_HEIGHT / 2 - 50, 32, YELLOW);
                     }
                     else {
                         DrawText("Press Space for next level!", 150, SCREEN_HEIGHT / 2 - 50, 24, YELLOW);
-                        if(IsKeyPressed(KEY_SPACE)) {
+                        if (IsKeyPressed(KEY_SPACE)) {
                             level_num++;
                             game_won = false;
                             load_level();
@@ -476,16 +476,16 @@ int main() {
                     }
                 }
             }
-            if(IsKeyPressed(KEY_R) && is_restartable_and_loadable) {
+            if (IsKeyPressed(KEY_R) && is_restartable_and_loadable) {
                 load_level();
                 game_won = false;
             }
-            if(IsKeyPressed(KEY_E)) {
+            if (IsKeyPressed(KEY_E)) {
                 editor_mode = !editor_mode;
             }
-            if(IsKeyPressed(KEY_M)) {
+            if (IsKeyPressed(KEY_M)) {
                 is_music_playing = !is_music_playing;
-                if(is_music_playing) {
+                if (is_music_playing) {
                     PlayMusicStream(melody);
                 }
                 else {
@@ -494,7 +494,7 @@ int main() {
             }
         }
         EndDrawing();
-        if(strlen(debug_string) > 0) {
+        if (strlen(debug_string) > 0) {
             TraceLog(LOG_WARNING, debug_string);
         }
     }
